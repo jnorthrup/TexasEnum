@@ -180,7 +180,6 @@ public enum Play {
                 (IntBuffer
                         hand, CardMemory
                         memory) {
-            boolean b1 = false;
             IntBuffer swap = allocate(4);
 
 
@@ -244,17 +243,10 @@ public enum Play {
     public IntBuffer recognize(IntBuffer hand, CardMemory memory) {
         IntBuffer res = null;
         if (hand.rewind().mark().limit() >= minimum) {
-//            IntBuffer cache = memory.mpos(this);
-//
-//            int card = cache.get();
-//            cache.reset();
-//
-//            final int hlim = hand.limit();
-//
-//            final int nixPlay = 0x80 | hlim;
-//            if (nixPlay != card) {  //nixplay indicates a previous failed test
-//                if (-1 == card) { //-1 indicates virgin
-            res = this.recognize2(hand, memory); //blast off
+
+
+            res = this.recognize2(hand, memory);
+
         }
         return res;
     }

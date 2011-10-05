@@ -92,7 +92,7 @@ public class HoldemRulesTest extends TestCase {
     public void testDoPair() throws Exception {
         IntBuffer r1;
         IntBuffer cards;
-        cards = (IntBuffer) IntBuffer.wrap(new int[]
+        cards = IntBuffer.wrap(new int[]
                 {
                         (card(KING, DIAMONDS)),
                         (card(KING, SPADES)),
@@ -336,7 +336,7 @@ public class HoldemRulesTest extends TestCase {
     public void testDoTwoPair() throws Exception {
         IntBuffer r1;
         IntBuffer cards;
-        cards = (IntBuffer) IntBuffer.wrap(new int[]
+        cards = IntBuffer.wrap(new int[]
                 {
                         (card(KING, DIAMONDS)),
                         (card(KING, SPADES)),
@@ -350,7 +350,7 @@ public class HoldemRulesTest extends TestCase {
 
         /*face*/
         assertEquals(KING.ordinal(), r1.get(0) >>> 16);
-        cards = (IntBuffer) IntBuffer.wrap(new int[]
+        cards = IntBuffer.wrap(new int[]
                 {
                         (card(ACE, DIAMONDS)),
                         (card(KING, SPADES)),

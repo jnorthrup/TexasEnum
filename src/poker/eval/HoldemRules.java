@@ -20,7 +20,7 @@ public class HoldemRules {
     }
 
 
-    static private IntBuffer doMatchWithExclusion(final IntBuffer hand, final int limit, final int avoidFace) {
+    static IntBuffer doMatchWithExclusion(final IntBuffer hand, final int limit, final int avoidFace) {
         hand.rewind().mark();
         int pFace = -1;
         final IntBuffer swap = BuffUtil.allocate(limit);
@@ -71,7 +71,7 @@ public class HoldemRules {
     }
 
 
-    private static IntBuffer doFullHouse(IntBuffer hand, final CardMemory cardMemory) {
+    static IntBuffer doFullHouse(IntBuffer hand, final CardMemory cardMemory) {
         IntBuffer triple = THREEOFAKIND.recognize(hand, cardMemory);//uses cache
         IntBuffer res = null;
         if (triple != null) {
@@ -89,15 +89,15 @@ public class HoldemRules {
         return res;
     }
 
-    private static IntBuffer doPair(IntBuffer hand) {
+    static IntBuffer doPair(IntBuffer hand) {
         return fastMatch(hand, Play.PAIR);
     }
 
-    private static IntBuffer doTrip(IntBuffer hand) {
+    static IntBuffer doTrip(IntBuffer hand) {
         return fastMatch(hand, Play.THREEOFAKIND);
     }
 
-    static private IntBuffer doTwoPair(IntBuffer cards, CardMemory cardMemory) {
+    static IntBuffer doTwoPair(IntBuffer cards, CardMemory cardMemory) {
         IntBuffer r1 = Play.PAIR.recognize(cards, cardMemory); //Recognize uses cache if possible.
         IntBuffer res = null;
         if (r1 != null) {
@@ -124,7 +124,7 @@ public class HoldemRules {
         return eq != 0 ? eq : (boat1.get(3) >>> 16) - (boat2.get(3) >>> 16);
     }
 
-    static private IntBuffer doQuads(IntBuffer hand) {
+    static IntBuffer doQuads(IntBuffer hand) {
         return fastMatch(hand, FOUROFAKIND);
     }
 
@@ -151,7 +151,7 @@ public class HoldemRules {
         return res;
     }
 
-    static private IntBuffer doFlush(IntBuffer hand) {
+    static IntBuffer doFlush(IntBuffer hand) {
 
         final IntBuffer[] sbuf = new IntBuffer[SUITS_LEN];
         for (int i = 0; i < sbuf.length; i++)
@@ -184,7 +184,7 @@ public class HoldemRules {
 
     }
 
-    static private IntBuffer doStrait(IntBuffer cards) {
+    static IntBuffer doStrait(IntBuffer cards) {
         int pFace = DECK_SIZE + 1;
         final IntBuffer swap = BuffUtil.allocate(5);
         cards.reset();
