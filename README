@@ -26,4 +26,5 @@ INFO: [card(TEN,CLUBS), card(KING,HEARTS), card(FOUR,SPADES), card(JACK,SPADES),
 Oct 5, 2011 1:29:57 PM poker.game.GameStateTest getGameSpeed
 INFO: ITERATIONS (100000000)/ duration (4549)=  21982.854
 
+21.9 million hands per second!
 
