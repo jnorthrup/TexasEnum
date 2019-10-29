@@ -1,6 +1,5 @@
 package poker.eval;
 
-import com.sun.org.apache.bcel.internal.generic.*;
 import static poker.eval.Deck.*;
 import static poker.eval.Face.*;
 import static poker.eval.Play.*;
