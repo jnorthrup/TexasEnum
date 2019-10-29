@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="TexasEnum" target="1.6" />
+      <module name="TexasEnum" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>
