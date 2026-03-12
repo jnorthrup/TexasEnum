@@ -18,24 +18,17 @@ public class CardUtilTest extends TestCase {
 
     public void testAddSorted() throws Exception {
 
-        /** bogus sorted
-         *
-         */
+        /* build a hand one card at a time via addSorted, starting from EMPTYCARDS */
+        IntBuffer hand = EMPTYCARDS;
+        hand = addSorted(card(TWO, HEARTS), hand);
+        hand = addSorted(card(ACE, SPADES), hand);
+        hand = addSorted(card(TWO, SPADES), hand);
+        hand = addSorted(card(ACE, CLUBS), hand);
+        hand = addSorted(card(ACE, DIAMONDS), hand);
+        hand = addSorted(card(TWO, DIAMONDS), hand);
 
-        IntBuffer subjectHand = (IntBuffer) IntBuffer.wrap(new int[]{
-                card(TWO, HEARTS),
-                card(ACE, SPADES),
-                card(TWO, SPADES),
-                card(ACE, CLUBS),
-                card(ACE, DIAMONDS),
-                card(TWO, DIAMONDS),
-        }).mark();
-
-        /* manually sorted
-
-         */
-
-        IntBuffer controlHand = (IntBuffer) IntBuffer.wrap(new int[]{
+        /* expected: sorted by face (ACE=0 first), then suit within face */
+        IntBuffer expected = (IntBuffer) IntBuffer.wrap(new int[]{
                 card(ACE, CLUBS),
                 card(ACE, DIAMONDS),
                 card(ACE, SPADES),
@@ -44,59 +37,31 @@ public class CardUtilTest extends TestCase {
                 card(TWO, SPADES),
         }).mark();
 
-        IntBuffer referenceHand = (IntBuffer) IntBuffer.wrap(new int[]{
-                card(ACE, CLUBS),
-                card(ACE, DIAMONDS),
-                card(ACE, SPADES),
-                card(TWO, DIAMONDS),
-                card(TWO, HEARTS),
-                card(TWO, SPADES),
-        }).mark();
-
-        while (controlHand.hasRemaining())
-            subjectHand = addSorted(controlHand.get(), subjectHand);
-
-
-        final IntBuffer buffer = mergeSortHands(controlHand);
-        final IntBuffer intBuffer = mergeSortHands(referenceHand);
-        final String s = new String(toChar(buffer));
-        final String s1 = new String(toChar(intBuffer));
-        assertEquals(
-                s,
-                s1
-        );
-        assertEquals(controlHand.rewind().mark(), referenceHand.rewind().mark());
-
-        final Card[] cards1 = hand((IntBuffer) subjectHand.reset());
-        final Card[] cards2 = hand((IntBuffer) controlHand.reset());
-        final Card[] cards3 = hand(referenceHand);
-        Logger.getAnonymousLogger().info("Success: " + Arrays.toString(cards1) + " becomes " + Arrays.toString(cards2) + " is " + Arrays.toString(cards3));
-
-
+        final String result = new String(toChar((IntBuffer) hand.rewind().mark()));
+        final String expect = new String(toChar((IntBuffer) expected.rewind().mark()));
+        assertEquals(expect, result);
     }
 
 
     public void testMergeSortHands() throws Exception {
-        /* manually sorted */
-        Card[] control = new Card[]{
-                new Card(TWO, HEARTS),
-                new Card(ACE, DIAMONDS),
-                new Card(TWO, SPADES),
-                new Card(ACE, SPADES),
-                new Card(TWO, DIAMONDS),
-                new Card(ACE, CLUBS),
-        };
-        final IntBuffer subjectHand = hand(control);
-        IntBuffer referenceHand = BuffUtil.allocate(control.length);
-        referenceHand.put(card(ACE, CLUBS))
-                .put(card(ACE, DIAMONDS))
-                .put(card(ACE, SPADES))
-                .put(card(TWO, DIAMONDS))
-                .put(card(TWO, SPADES))
-                .put(card(TWO, HEARTS));
-        final IntBuffer buffer = mergeSortHands(subjectHand, referenceHand);
+        /* mirror exactly how the game engine does it: wrap pocket, mergeSortHands, then add community */
+        IntBuffer pocket = (IntBuffer) IntBuffer.wrap(
+                new int[]{card(ACE, CLUBS), card(ACE, DIAMONDS)}
+        ).mark();
+        // this is how GameState.deal creates sorted pocket
+        IntBuffer sortedPocket = mergeSortHands(pocket);
 
-        assert (buffer.rewind().mark().equals(referenceHand.rewind().mark()));
+        // this is how GameState.flop creates the community
+        IntBuffer community = (IntBuffer) IntBuffer.wrap(
+                new int[]{card(TWO, DIAMONDS), card(TWO, HEARTS), card(TWO, SPADES), -1, -1}
+        ).mark().limit(3);
+
+        // this is how GameState.flop merges them
+        final IntBuffer buffer = mergeSortHands(sortedPocket, community);
+
+        assertEquals(5, buffer.limit());
+        final String result = new String(toChar((IntBuffer) buffer.rewind().mark()));
+        assertEquals("AcAd2d2h2s", result);
     }
 
 
@@ -105,7 +70,8 @@ public class CardUtilTest extends TestCase {
         final Card card = new Card(TWO, SPADES);
         final int bcard = card(card);
 
-        assert (card(bcard).equals(card));
+        assertEquals(card.face, card(bcard).face);
+        assertEquals(card.suit, card(bcard).suit);
         assertEquals(TWO.ordinal(), card.face.ordinal());
         assertEquals(SPADES.ordinal(), card.suit.ordinal());
         assertEquals(TWO, face((Integer) bcard));

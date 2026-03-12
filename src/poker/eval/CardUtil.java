@@ -36,12 +36,19 @@ public class CardUtil {
      */
     public static IntBuffer addSorted(int card, IntBuffer focus) {
 
+        // ensure focus is a mutable BuffUtil buffer with room to grow
+        if (focus.capacity() <= focus.limit()) {
+            final int ilim = focus.limit();
+            final IntBuffer grown = (IntBuffer) BuffUtil.allocate(7).mark();
+            if (ilim > 0) {
+                focus.rewind();
+                grown.put(focus);
+            }
+            focus = (IntBuffer) grown.limit(ilim).rewind().mark();
+        }
+
         final int icap = focus.capacity();
-        if (icap > 7)
-            throw new Error();
         final int ilim = focus.limit();
-        if ((icap == ilim))
-            focus = (IntBuffer) BuffUtil.allocate(7).mark().limit(0);
 
         focus.reset();
 
@@ -52,12 +59,10 @@ public class CardUtil {
                 break;
         }
 
-//        final int pos = focus.mpos();
-
         final int flim = focus.limit();
         IntBuffer res;
         if (hwater == card) {
-            res = (IntBuffer) focus/*.position(flim)*/;
+            res = (IntBuffer) focus.rewind().mark();
         } else {
 
             final IntBuffer mv = ((IntBuffer) focus.reset()).slice();
@@ -68,13 +73,12 @@ public class CardUtil {
                 focus = (IntBuffer) swap.limit(flim).rewind().mark();
             }
 
-
             focus.limit(flim + 1);
             final IntBuffer swap = focus.slice();
             swap.position(1);
             swap.put(mv);
             focus.put(card);
-            res = (IntBuffer) focus.position(flim);
+            res = (IntBuffer) focus.position(flim + 1).rewind().mark();
         }
         return res;
     }
@@ -90,7 +94,7 @@ public class CardUtil {
         int eq = 0;
         /*face*/
         /*face*/
-        while (hand1.hasRemaining() &&
+        while (hand1.hasRemaining() && hand2.hasRemaining() &&
                 (eq = (hand1.get() >>> 16) -
                         (hand2.get() >>> 16)) == 0) ;
 
@@ -122,8 +126,8 @@ public class CardUtil {
      * @deprecated
      */
     static public Card card(int card) {
-        assert (card > 0);
-        assert (card < DECK_SIZE);
+        assert (card >= 0);
+        assert (face(card) < FACES_LEN && suit(card) < SUITS_LEN);
         /*suit*/
         /*face*/
         Card card1 = new Card(Face.values()[(card >>> 16)], Suit.values()[(card & 0x3)]);

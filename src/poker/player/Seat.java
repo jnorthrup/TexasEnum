@@ -19,7 +19,7 @@ public abstract class Seat extends CardMemory {
 
     static {
 
-        if (test) Logger.getAnonymousLogger().info("Seat.TEST is TRUE, this is [rpbably not what you want!");
+        if (test) Logger.getAnonymousLogger().info("Seat.TEST is TRUE, this is probably not what you want!");
 
     }
 
