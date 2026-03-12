@@ -1,52 +1,49 @@
 package poker.game;
 
+import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.runner.options.TimeValue;
+import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.annotations.*;
 import poker.player.Dealer;
 import poker.player.Player;
 import poker.strat.DefaultStrategy;
 import poker.strat.Strategy;
 
-import java.nio.IntBuffer;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Benchmark for simulating a full poker game using JMH.
- * Measures throughput in hands per second.
- */
-@BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.SECONDS)
-@State(Scope.Benchmark)
-@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(3)
 public class GameStateBenchmark {
 
-    private Dealer dealer;
-    private Strategy strategy;
+    public static void main(String[] args) throws Exception {
+        org.openjdk.jmh.runner.options.Options options = new OptionsBuilder()
+                .include("poker.game.GameStateBenchmark")
+                .mode(Mode.Throughput)
+                .timeUnit(TimeUnit.SECONDS)
+                .warmupIterations(5)
+                .warmupTime(TimeValue.seconds(1))
+                .measurementIterations(10)
+                .measurementTime(TimeValue.seconds(1))
+                .forks(0)
+                .threads(1)
+                .build();
 
-    @Setup(Level.Trial)
-    public void setUp() {
-        // Create dealer with 6 players using DefaultStrategy
-        dealer = new Dealer();
-        strategy = new DefaultStrategy();
-        
+        new Runner(options).run();
+    }
+
+    @Benchmark
+    public void simulateHand() {
+        Dealer dealer = new Dealer();
+        Strategy strategy = new DefaultStrategy();
+
         for (int i = 0; i < 6; i++) {
             Player player = new Player();
             player.strategy = strategy;
             dealer.players.add(player);
         }
-        
-        // Disable test logging for performance benchmarking
+
         GameState.test = false;
         Dealer.test = false;
-        
-        // Set initial dealer state
-        dealer.lowerLimit = 5.0; // For blinds: small blind = lowerLimit/2, big blind = lowerLimit
-    }
 
-    @Benchmark
-    public void simulateHand() {
-        // Reset dealer state for each hand
+        dealer.lowerLimit = 5.0;
         dealer.deck.shuffle();
         dealer.pot = 0;
         dealer.blind = 5;
@@ -61,26 +58,13 @@ public class GameStateBenchmark {
         dealer.smallBlind = 0;
         dealer.bigBlind = 0;
         dealer.bettingRound = 0;
-        
-        // Reset player state for each hand
+
         for (Player player : dealer.players) {
             player.refresh();
-            player.stack = 1000; // Reset stack to initial value
+            player.stack = 1000;
             player.wins = 0;
-            // Note: lastPlayed is package-private and shot is private, 
-            // but refresh() should handle resetting internal state
         }
-        
-        // Simulate one hand
-        GameState.start(dealer);
-    }
 
-    /**
-     * Main method to run the benchmark.
-     * @param args command line arguments
-     * @throws Exception if benchmark execution fails
-     */
-    public static void main(String[] args) throws Exception {
-        org.openjdk.jmh.Main.main(args);
+        GameState.start(dealer);
     }
 }
