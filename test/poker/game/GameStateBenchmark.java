@@ -4,6 +4,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 import poker.player.Dealer;
 import poker.player.Player;
 import poker.strat.DefaultStrategy;
@@ -12,6 +13,19 @@ import poker.strat.Strategy;
 import java.util.concurrent.TimeUnit;
 
 public class GameStateBenchmark {
+
+    @State(Scope.Benchmark)
+    public static class BenchmarkState {
+        public Dealer dealer;
+        public Strategy strategy;
+        
+        @Setup(Level.Iteration)
+        public void setup() {
+            strategy = new DefaultStrategy();
+            GameState.test = false;
+            Dealer.test = false;
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         org.openjdk.jmh.runner.options.Options options = new OptionsBuilder()
@@ -30,41 +44,20 @@ public class GameStateBenchmark {
     }
 
     @Benchmark
-    public void simulateHand() {
+    public void simulateHand(BenchmarkState state, Blackhole bh) {
         Dealer dealer = new Dealer();
-        Strategy strategy = new DefaultStrategy();
-
+        
         for (int i = 0; i < 6; i++) {
             Player player = new Player();
-            player.strategy = strategy;
+            player.strategy = state.strategy;
             dealer.players.add(player);
         }
 
-        GameState.test = false;
-        Dealer.test = false;
-
         dealer.lowerLimit = 5.0;
         dealer.deck.shuffle();
-        dealer.pot = 0;
-        dealer.blind = 5;
-        dealer.bet = 5;
-        dealer.button = null;
-        dealer.leadin = null;
-        dealer.marker = 0;
-        dealer.lastCalled = 0;
-        dealer.isCalled = false;
-        dealer.canCheck = false;
-        dealer.canCall = false;
-        dealer.smallBlind = 0;
-        dealer.bigBlind = 0;
-        dealer.bettingRound = 0;
-
-        for (Player player : dealer.players) {
-            player.refresh();
-            player.stack = 1000;
-            player.wins = 0;
-        }
-
+        
         GameState.start(dealer);
+        
+        bh.consume(dealer);
     }
 }
