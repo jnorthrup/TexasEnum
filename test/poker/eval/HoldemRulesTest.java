@@ -317,50 +317,54 @@ public class HoldemRulesTest extends TestCase {
     public void testDoFullHouse() throws Exception {
         {
             IntBuffer cards;
-            cards = IntBuffer.wrap(new int[]{
+            cards = (IntBuffer) IntBuffer.wrap(new int[]{
                     (card(EIGHT, DIAMONDS)),
                     (card(SEVEN, CLUBS)),
                     (card(SEVEN, SPADES)),
                     (card(FOUR, SPADES)),
                     (card(FOUR, HEARTS)),
                     (card(FOUR, CLUBS)),
-                    (card(TWO, DIAMONDS)),});
+                    (card(TWO, DIAMONDS)),}).mark();
 
-
-            IntBuffer buffer = (IntBuffer) cards.rewind().mark();
-            IntBuffer r1 = (IntBuffer) doFullHouse(buffer, new CardMemory()).reset();
-            System.gc();
+            final Pair<Play, IntBuffer> pair = Play.assess(cards);
+            assertEquals(Play.FULLHOUSE, pair.getFirst());
+            IntBuffer r1 = pair.getSecond();
+            assertNotNull(r1);
+            assertEquals(5, r1.limit());
         }
     }
  
     public void testDoTwoPair() throws Exception {
         IntBuffer r1;
         IntBuffer cards;
-        cards = IntBuffer.wrap(new int[]
+        cards = (IntBuffer) IntBuffer.wrap(new int[]
                 {
                         (card(KING, DIAMONDS)),
                         (card(KING, SPADES)),
                         (card(QUEEN, SPADES)),
                         (card(QUEEN, HEARTS)),
                         (card(EIGHT, DIAMONDS)),
-                });
+                }).mark();
 
-        r1 = doTwoPair(cards, new CardMemory());
+        final Pair<Play, IntBuffer> pair = Play.assess(cards);
+        assertEquals(Play.TWOPAIR, pair.getFirst());
+        r1 = pair.getSecond();
         assertEquals(4, r1.limit());
 
         /*face*/
         assertEquals(KING.ordinal(), r1.get(0) >>> 16);
-        cards = IntBuffer.wrap(new int[]
+
+        cards = (IntBuffer) IntBuffer.wrap(new int[]
                 {
                         (card(ACE, DIAMONDS)),
                         (card(KING, SPADES)),
                         (card(QUEEN, SPADES)),
                         (card(QUEEN, HEARTS)),
                         (card(EIGHT, DIAMONDS)),
-                });
+                }).mark();
 
-        r1 = doTwoPair(cards, new CardMemory());
-        assertNull(r1);
+        final Pair<Play, IntBuffer> pair2 = Play.assess(cards);
+        assertEquals(Play.PAIR, pair2.getFirst());  // only one pair (QQ), not two pair
 
         //KdJdTs9s8h3h3s
     }
