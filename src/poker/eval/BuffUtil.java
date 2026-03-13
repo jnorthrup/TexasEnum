@@ -1,20 +1,12 @@
 package poker.eval;
 
-import java.nio.*;
-import java.util.logging.*;
-
-/**
- * User: jim
- * Date: Oct 6, 2007
- * Time: 3:10:32 AM
- */
 public class BuffUtil {
 
-    public static final IntBuffer EMPTY_SET = ByteBuffer.allocate(0).asReadOnlyBuffer().asIntBuffer();
+    public static final IntArrayCircularBuffer EMPTY_SET = IntArrayCircularBuffer.allocate(0);
 
-    public static IntBuffer allocate(int size) {
+    public static IntArrayCircularBuffer allocate(int size) {
         if (size == 0) return EMPTY_SET;
-        return IntBuffer.allocate(size).mark();
+        return IntArrayCircularBuffer.allocate(size).mark();
     }
 
     final public static boolean isTest() {

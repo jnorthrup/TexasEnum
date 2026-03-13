@@ -6,7 +6,6 @@ package poker.eval;
 
 import poker.player.*;
 
-import java.nio.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -22,8 +21,8 @@ public final class Deck {
     public static final int DECK_SIZE = FACES_LEN * SUITS_LEN;
     static final char[] faces = new char[Face.values().length];
     static final char[] suits = new char[Suit.values().length];
-    static private final IntBuffer deck = (IntBuffer) IntBuffer.wrap(new int[DECK_SIZE]).mark();
-    private IntBuffer cards = (IntBuffer) ((IntBuffer) BuffUtil.allocate(DECK_SIZE)).put(deck).mark();
+    static private final IntArrayCircularBuffer deck = IntArrayCircularBuffer.allocate(DECK_SIZE).mark();
+    private IntArrayCircularBuffer cards = IntArrayCircularBuffer.allocate(DECK_SIZE).put(deck).mark();
 
     static {
         initFaces();
@@ -40,7 +39,7 @@ public final class Deck {
             }
 
         if (Seat.test)
-            Logger.getAnonymousLogger().info(String.valueOf(CardUtil.toChar((IntBuffer) deck.reset())));
+            Logger.getAnonymousLogger().info(String.valueOf(CardUtil.toChar(deck.reset())));
     }
 
     private static void initSuits() {
@@ -88,7 +87,7 @@ public final class Deck {
         cards.rewind().mark();
         if (Seat.test) {
             dump();
-            Logger.getAnonymousLogger().info(String.valueOf(CardUtil.toChar((IntBuffer) cards.duplicate().reset())));
+            Logger.getAnonymousLogger().info(String.valueOf(CardUtil.toChar(cards.duplicate().reset())));
         }
     }
 
@@ -104,11 +103,11 @@ public final class Deck {
         deal();
     }
 
-    public IntBuffer getCards() {
+    public IntArrayCircularBuffer getCards() {
         return cards.slice();
     }
 
-    public void setCards(IntBuffer cards) {
+    public void setCards(IntArrayCircularBuffer cards) {
         this.cards = cards;
     }
 
