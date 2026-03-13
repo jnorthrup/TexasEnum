@@ -14,9 +14,7 @@ public class BuffUtil {
 
     public static IntBuffer allocate(int size) {
         if (size == 0) return EMPTY_SET;
-        IntBuffer buf = IntBuffer.allocate(size);
-        buf.limit(0); // Start empty like the slab did
-        return buf;
+        return IntBuffer.allocate(size).mark();
     }
 
     final public static boolean isTest() {
