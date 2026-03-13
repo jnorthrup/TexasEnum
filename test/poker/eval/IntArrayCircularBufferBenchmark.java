@@ -14,15 +14,8 @@ public class IntArrayCircularBufferBenchmark {
 
     private static final int CAPACITY = 1000000;
 
-    private IntArrayCircularBuffer intArrayBuffer;
-    private IntBuffer intBuffer;
-    private int[] intArray;
-
     @Setup(Level.Trial)
     public void setUp() {
-        intArrayBuffer = new IntArrayCircularBuffer(CAPACITY);
-        intBuffer = IntBuffer.allocate(CAPACITY);
-        intArray = new int[CAPACITY];
     }
 
     @Benchmark
@@ -50,7 +43,7 @@ public class IntArrayCircularBufferBenchmark {
             buf.offer(i);
         }
         int sum = 0;
-        while (!buf.isEmpty()) {
+        for (int i = 0; i < CAPACITY; i++) {
             sum += buf.poll();
         }
         bh.consume(sum);

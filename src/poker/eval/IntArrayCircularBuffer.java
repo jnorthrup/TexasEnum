@@ -2,101 +2,65 @@ package poker.eval;
 
 public final class IntArrayCircularBuffer {
     private final int[] buffer;
-    private final int capacity;
-    private int head;
-    private int tail;
-    private int count;
+    public int head;
+    public int tail;
 
     public IntArrayCircularBuffer(int capacity) {
         if (capacity <= 0) {
             throw new IllegalArgumentException("Capacity must be positive");
         }
-        this.capacity = capacity;
         this.buffer = new int[capacity];
         this.head = 0;
         this.tail = 0;
-        this.count = 0;
-    }
-
-    public boolean isEmpty() {
-        return count == 0;
-    }
-
-    public boolean isFull() {
-        return count == capacity;
-    }
-
-    public int size() {
-        return count;
     }
 
     public int capacity() {
-        return capacity;
+        return buffer.length;
     }
 
     public int offer(int value) {
-        if (count == capacity) {
-            return -1;
-        }
         buffer[tail] = value;
-        tail = (tail + 1) % capacity;
-        count++;
+        tail = (tail + 1) % buffer.length;
         return value;
     }
 
     public int poll() {
-        if (count == 0) {
-            return -1;
-        }
         int value = buffer[head];
-        head = (head + 1) % capacity;
-        count--;
+        head = (head + 1) % buffer.length;
         return value;
     }
 
     public int peek() {
-        if (count == 0) {
-            return -1;
-        }
         return buffer[head];
     }
 
     public int get(int index) {
-        if (index < 0 || index >= count) {
-            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + count);
-        }
-        return buffer[(head + index) % capacity];
+        return buffer[(head + index) % buffer.length];
     }
 
     public int set(int index, int value) {
-        if (index < 0 || index >= count) {
-            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + count);
-        }
-        int oldValue = buffer[(head + index) % capacity];
-        buffer[(head + index) % capacity] = value;
+        int oldValue = buffer[(head + index) % buffer.length];
+        buffer[(head + index) % buffer.length] = value;
         return oldValue;
     }
 
     public void clear() {
         head = 0;
         tail = 0;
-        count = 0;
     }
 
     public int[] toArray() {
-        int[] result = new int[count];
-        for (int i = 0; i < count; i++) {
-            result[i] = buffer[(head + i) % capacity];
+        int len = tail >= head ? tail - head : buffer.length - head + tail;
+        int[] result = new int[len];
+        for (int i = 0; i < len; i++) {
+            result[i] = buffer[(head + i) % buffer.length];
         }
         return result;
     }
 
     public void copyTo(int[] dst, int offset, int length) {
-        if (length > count) {
-            length = count;
-        }
         for (int i = 0; i < length; i++) {
-            dst[offset + i] = buffer[(head + i) % capacity];
+            dst[offset + i] = buffer[(head + i) % buffer.length];
         }
     }
 
