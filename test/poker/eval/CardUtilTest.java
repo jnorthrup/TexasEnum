@@ -19,7 +19,7 @@ public class CardUtilTest extends TestCase {
     public void testAddSorted() throws Exception {
 
         /* build a hand one card at a time via addSorted, starting from EMPTYCARDS */
-        IntBuffer hand = EMPTYCARDS;
+        IntArrayCircularBuffer hand = EMPTYCARDS;
         hand = addSorted(card(TWO, HEARTS), hand);
         hand = addSorted(card(ACE, SPADES), hand);
         hand = addSorted(card(TWO, SPADES), hand);
@@ -28,7 +28,7 @@ public class CardUtilTest extends TestCase {
         hand = addSorted(card(TWO, DIAMONDS), hand);
 
         /* expected: sorted by face (ACE=0 first), then suit within face */
-        IntBuffer expected = (IntBuffer) IntBuffer.wrap(new int[]{
+        IntArrayCircularBuffer expected = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(new int[]{
                 card(ACE, CLUBS),
                 card(ACE, DIAMONDS),
                 card(ACE, SPADES),
@@ -37,30 +37,30 @@ public class CardUtilTest extends TestCase {
                 card(TWO, SPADES),
         }).mark();
 
-        final String result = new String(toChar((IntBuffer) hand.rewind().mark()));
-        final String expect = new String(toChar((IntBuffer) expected.rewind().mark()));
+        final String result = new String(toChar((IntArrayCircularBuffer) hand.rewind().mark()));
+        final String expect = new String(toChar((IntArrayCircularBuffer) expected.rewind().mark()));
         assertEquals(expect, result);
     }
 
 
     public void testMergeSortHands() throws Exception {
         /* mirror exactly how the game engine does it: wrap pocket, mergeSortHands, then add community */
-        IntBuffer pocket = (IntBuffer) IntBuffer.wrap(
+        IntArrayCircularBuffer pocket = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(
                 new int[]{card(ACE, CLUBS), card(ACE, DIAMONDS)}
         ).mark();
         // this is how GameState.deal creates sorted pocket
-        IntBuffer sortedPocket = mergeSortHands(pocket);
+        IntArrayCircularBuffer sortedPocket = mergeSortHands(pocket);
 
         // this is how GameState.flop creates the community
-        IntBuffer community = (IntBuffer) IntBuffer.wrap(
+        IntArrayCircularBuffer community = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(
                 new int[]{card(TWO, DIAMONDS), card(TWO, HEARTS), card(TWO, SPADES), -1, -1}
         ).mark().limit(3);
 
         // this is how GameState.flop merges them
-        final IntBuffer buffer = mergeSortHands(sortedPocket, community);
+        final IntArrayCircularBuffer buffer = mergeSortHands(sortedPocket, community);
 
         assertEquals(5, buffer.limit());
-        final String result = new String(toChar((IntBuffer) buffer.rewind().mark()));
+        final String result = new String(toChar((IntArrayCircularBuffer) buffer.rewind().mark()));
         assertEquals("AcAd2d2h2s", result);
     }
 
@@ -81,12 +81,12 @@ public class CardUtilTest extends TestCase {
     }
 
     public void testCompareDefault() throws Exception {
-        IntBuffer pair1 = BuffUtil.allocate(2)
+        IntArrayCircularBuffer pair1 = BuffUtil.allocate(2)
                 .put(card(Face.ACE, Suit.SPADES))
                 .put(card(Face.ACE, HEARTS));
 
 
-        IntBuffer pair2 = BuffUtil.allocate(2)
+        IntArrayCircularBuffer pair2 = BuffUtil.allocate(2)
                 .put(card(TWO, CLUBS))
                 .put(card(TWO, HEARTS));
 
@@ -97,23 +97,23 @@ public class CardUtilTest extends TestCase {
     }
 
     public void testCompareHighCard() throws Exception {
-        IntBuffer hand1 = BuffUtil.allocate(2)
+        IntArrayCircularBuffer hand1 = BuffUtil.allocate(2)
                 .put(card(ACE, CLUBS))
                 .put(card(ACE, DIAMONDS));
 
 
-        IntBuffer hand2 = BuffUtil.allocate(2)
+        IntArrayCircularBuffer hand2 = BuffUtil.allocate(2)
                 .put(card(TWO, CLUBS))
                 .put(card(TWO, DIAMONDS));
 
 
-        final int i = compareHighCard((IntBuffer) hand1.rewind().mark(), (IntBuffer) hand2.rewind().mark());
+        final int i = compareHighCard((IntArrayCircularBuffer) hand1.rewind().mark(), (IntArrayCircularBuffer) hand2.rewind().mark());
         assertTrue(i < 0);
 
     }
 
     public void testToChar() throws Exception {
-        IntBuffer altHand = (IntBuffer) IntBuffer.wrap(new int[]{card(ACE, CLUBS), card(ACE, HEARTS)}).mark();
+        IntArrayCircularBuffer altHand = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(new int[]{card(ACE, CLUBS), card(ACE, HEARTS)}).mark();
 
         final StringBuilder sb = new StringBuilder();
 
@@ -124,14 +124,14 @@ public class CardUtilTest extends TestCase {
     }
 
     public void testCompareBoat() throws Exception {
-        IntBuffer boat1 = BuffUtil.allocate(5)
+        IntArrayCircularBuffer boat1 = BuffUtil.allocate(5)
                 .put(card(THREE, CLUBS))
                 .put(card(THREE, DIAMONDS))
                 .put(card(THREE, SPADES))
                 .put(card(ACE, DIAMONDS))
                 .put(card(ACE, SPADES));
 
-        IntBuffer boat2 = BuffUtil.allocate(5)
+        IntArrayCircularBuffer boat2 = BuffUtil.allocate(5)
                 .put(card(TWO, HEARTS))
                 .put(card(TWO, DIAMONDS))
                 .put(card(TWO, SPADES))

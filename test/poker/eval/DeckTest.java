@@ -17,7 +17,7 @@ public class DeckTest extends TestCase {
         Deck deck = new Deck();
         deck.shuffle();
 
-        final IntBuffer cards = deck.getCards();
+        final IntArrayCircularBuffer cards = deck.getCards();
 
         cards.rewind().mark();
         final int[] dst = new int[cards.limit()];

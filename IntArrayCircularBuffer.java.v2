@@ -9,8 +9,8 @@ public final class IntArrayCircularBuffer {
     private int mark = -1;
 
     public IntArrayCircularBuffer(int capacity) {
-        if (capacity < 0) {
-            throw new IllegalArgumentException("Capacity must be non-negative");
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("Capacity must be positive");
         }
         this.buffer = new int[capacity];
         this.head = 0;
@@ -99,25 +99,16 @@ public final class IntArrayCircularBuffer {
     }
 
     public int get() {
-        return buffer[(head + position) % buffer.length];
+        return buffer[head + position];
     }
 
     public int get(int index) {
         return buffer[(head + index) % buffer.length];
     }
 
-    public IntArrayCircularBuffer get(int[] dst) {
-        for (int i = 0; i < dst.length; i++) {
-            dst[i] = buffer[(head + position + i) % buffer.length];
-        }
-        position += dst.length;
-        return this;
-    }
-
     public IntArrayCircularBuffer put(int value) {
-        buffer[(head + position) % buffer.length] = value;
+        buffer[head + position] = value;
         position++;
-        if (position > limit) limit = position;
         return this;
     }
 
@@ -149,9 +140,9 @@ public final class IntArrayCircularBuffer {
 
     public IntArrayCircularBuffer slice() {
         IntArrayCircularBuffer result = new IntArrayCircularBuffer(buffer);
-        result.head = (this.head + this.position) % buffer.length;
+        result.head = this.head + this.position;
         result.position = 0;
-        result.limit = this.limit - this.position;
+        result.limit = this.limit;
         return result;
     }
 
@@ -163,10 +154,6 @@ public final class IntArrayCircularBuffer {
         result.limit = this.limit;
         result.mark = this.mark;
         return result;
-    }
-
-    public IntArrayCircularBuffer asReadOnlyBuffer() {
-        return duplicate();
     }
 
     public int[] toArray() {
@@ -192,30 +179,11 @@ public final class IntArrayCircularBuffer {
         return new IntArrayCircularBuffer(capacity);
     }
 
-    public static IntArrayCircularBuffer wrap(int[] array) {
-        return new IntArrayCircularBuffer(array);
-    }
-
     public static final int GB = 1024 * 1024 * 1024;
     public static final int INT_SIZE = 4;
     public static final int TWO_GB_INTS = (2 * GB) / INT_SIZE;
-    public static final int L1_CACHE = 32 * 1024;
-    public static final int L2_CACHE = 256 * 1024;
-    public static final int L3_CACHE = 4 * 1024 * 1024;
 
     public static IntArrayCircularBuffer allocateTwoGig() {
         return new IntArrayCircularBuffer(TWO_GB_INTS);
-    }
-
-    public static IntArrayCircularBuffer allocateL1() {
-        return new IntArrayCircularBuffer(L1_CACHE / 4);
-    }
-
-    public static IntArrayCircularBuffer allocateL2() {
-        return new IntArrayCircularBuffer(L2_CACHE / 4);
-    }
-
-    public static IntArrayCircularBuffer allocateL3() {
-        return new IntArrayCircularBuffer(L3_CACHE / 4);
     }
 }

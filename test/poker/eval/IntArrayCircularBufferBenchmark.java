@@ -6,6 +6,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import poker.eval.IntArrayCircularBuffer;
 import java.nio.IntBuffer;
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +30,7 @@ public class IntArrayCircularBufferBenchmark {
 
     @Benchmark
     public void intBufferOffer(Blackhole bh) {
-        IntBuffer buf = IntBuffer.allocate(CAPACITY);
+        IntArrayCircularBuffer buf = IntArrayCircularBuffer.allocate(CAPACITY);
         for (int i = 0; i < CAPACITY; i++) {
             buf.put(i);
         }
@@ -51,7 +52,7 @@ public class IntArrayCircularBufferBenchmark {
 
     @Benchmark
     public void intBufferPoll(Blackhole bh) {
-        IntBuffer buf = IntBuffer.allocate(CAPACITY);
+        IntArrayCircularBuffer buf = IntArrayCircularBuffer.allocate(CAPACITY);
         for (int i = 0; i < CAPACITY; i++) {
             buf.put(i);
         }
@@ -80,7 +81,7 @@ public class IntArrayCircularBufferBenchmark {
 
     @Benchmark
     public void intBufferPeek(Blackhole bh) {
-        IntBuffer buf = IntBuffer.allocate(CAPACITY);
+        IntArrayCircularBuffer buf = IntArrayCircularBuffer.allocate(CAPACITY);
         for (int i = 0; i < CAPACITY; i++) {
             buf.put(i);
         }
@@ -108,7 +109,7 @@ public class IntArrayCircularBufferBenchmark {
 
     @Benchmark
     public void intBufferGet(Blackhole bh) {
-        IntBuffer buf = IntBuffer.allocate(CAPACITY);
+        IntArrayCircularBuffer buf = IntArrayCircularBuffer.allocate(CAPACITY);
         for (int i = 0; i < CAPACITY; i++) {
             buf.put(i);
         }
@@ -130,7 +131,7 @@ public class IntArrayCircularBufferBenchmark {
 
     @Benchmark
     public void intBufferToArray(Blackhole bh) {
-        IntBuffer buf = IntBuffer.allocate(CAPACITY);
+        IntArrayCircularBuffer buf = IntArrayCircularBuffer.allocate(CAPACITY);
         for (int i = 0; i < CAPACITY; i++) {
             buf.put(i);
         }

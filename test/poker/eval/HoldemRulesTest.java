@@ -22,16 +22,16 @@ public class HoldemRulesTest extends TestCase {
     HoldemRules rules;
 
     public void testDoHighCard() throws Exception {
-        final IntBuffer cards = getSpadesRoyalStraightFlush();
+        final IntArrayCircularBuffer cards = getSpadesRoyalStraightFlush();
 
-        final IntBuffer buffer = doHighCard(cards);
+        final IntArrayCircularBuffer buffer = doHighCard(cards);
         assertEquals(buffer.get(0), card(ACE, SPADES));
 
 
     }
 
-    private IntBuffer getSpadesRoyalStraightFlush() {
-        final IntBuffer cards = BuffUtil.allocate(7);
+    private IntArrayCircularBuffer getSpadesRoyalStraightFlush() {
+        final IntArrayCircularBuffer cards = BuffUtil.allocate(7);
         cards.put(card(ACE, SPADES));
         cards.put(card(KING, SPADES));
         cards.put(card(QUEEN, SPADES));
@@ -44,9 +44,9 @@ public class HoldemRulesTest extends TestCase {
 
 
     public void testDoMatch() throws Exception {
-        IntBuffer r1;
+        IntArrayCircularBuffer r1;
         {
-            IntBuffer cards;
+            IntArrayCircularBuffer cards;
             cards = BuffUtil.allocate(7);
             cards.put(card(KING, DIAMONDS));
             cards.put(card(KING, SPADES));
@@ -56,9 +56,9 @@ public class HoldemRulesTest extends TestCase {
             r1 = HoldemRules.doMatchWithExclusion(cards, 2, Face.KING.ordinal());
         }
 
-        IntBuffer r2;
+        IntArrayCircularBuffer r2;
         {
-            IntBuffer cards;
+            IntArrayCircularBuffer cards;
             cards = BuffUtil.allocate(7);
             cards.put(card(KING, DIAMONDS));
             cards.put(card(KING, SPADES));
@@ -67,9 +67,9 @@ public class HoldemRulesTest extends TestCase {
             cards.put(card(JACK, DIAMONDS));
             r2 = HoldemRules.doMatchWithExclusion(cards, 2, Face.JACK.ordinal());
         }
-        IntBuffer r3;
+        IntArrayCircularBuffer r3;
         {
-            IntBuffer cards;
+            IntArrayCircularBuffer cards;
             cards = BuffUtil.allocate(7);
             cards.put(card(KING, DIAMONDS));
             cards.put(card(KING, SPADES));
@@ -90,9 +90,9 @@ public class HoldemRulesTest extends TestCase {
     }
 
     public void testDoPair() throws Exception {
-        IntBuffer r1;
-        IntBuffer cards;
-        cards = IntBuffer.wrap(new int[]
+        IntArrayCircularBuffer r1;
+        IntArrayCircularBuffer cards;
+        cards = IntArrayCircularBuffer.wrap(new int[]
                 {
                         (card(KING, DIAMONDS)),
                         (card(KING, SPADES)),
@@ -113,10 +113,10 @@ public class HoldemRulesTest extends TestCase {
     }
 
     public void testDoTrip() throws Exception {
-        IntBuffer r1;
+        IntArrayCircularBuffer r1;
         CardMemory memory;
         {
-            IntBuffer cards;
+            IntArrayCircularBuffer cards;
             cards = BuffUtil.allocate(7);
             cards.put(card(KING, DIAMONDS));
             cards.put(card(KING, SPADES));
@@ -135,10 +135,10 @@ public class HoldemRulesTest extends TestCase {
     }
 
     public void testDoQuads() throws Exception {
-        IntBuffer r1;
+        IntArrayCircularBuffer r1;
         CardMemory memory;
         {
-            IntBuffer cards;
+            IntArrayCircularBuffer cards;
             cards = BuffUtil.allocate(7);
             cards.put(card(ACE, DIAMONDS));
             cards.put(card(KING, DIAMONDS));
@@ -156,7 +156,7 @@ public class HoldemRulesTest extends TestCase {
         //known failure
         //FOUROFAKIND:7c7s7d4c4s8s2s[name='004e25cc-74f2-4897-be0c-4a8e84264627][out=false, wins=0, stack=499.0, act=check, pocket=7s4s]
         {
-            IntBuffer cards;
+            IntArrayCircularBuffer cards;
             cards = BuffUtil.allocate(7);
             cards.put(card(SEVEN, CLUBS));
             cards.put(card(SEVEN, DIAMONDS));
@@ -173,7 +173,7 @@ public class HoldemRulesTest extends TestCase {
     }
 
     public void testDoFlush() throws Exception {
-        final IntBuffer cards = BuffUtil.allocate(6);
+        final IntArrayCircularBuffer cards = BuffUtil.allocate(6);
         cards.put(card(ACE, HEARTS));
         cards.put(card(QUEEN, SPADES));
         cards.put(card(JACK, SPADES));
@@ -181,7 +181,7 @@ public class HoldemRulesTest extends TestCase {
         cards.put(card(NINE, SPADES));
         cards.put(card(EIGHT, SPADES));
         CardMemory memory = new CardMemory();
-        IntBuffer r1 = HoldemRules.doFlush(cards);
+        IntArrayCircularBuffer r1 = HoldemRules.doFlush(cards);
         assertEquals(5, r1.limit());
         /*face*/
         assertEquals(QUEEN.ordinal(), r1.get(0) >>> 16);
@@ -190,7 +190,7 @@ public class HoldemRulesTest extends TestCase {
     }
 
     public void testDoStrait() throws Exception {
-        final IntBuffer cards = BuffUtil.allocate(7);
+        final IntArrayCircularBuffer cards = BuffUtil.allocate(7);
         cards.put(card(ACE, SPADES));
 
         cards.put(card(QUEEN, SPADES));
@@ -199,7 +199,7 @@ public class HoldemRulesTest extends TestCase {
         cards.put(card(NINE, SPADES));
         cards.put(card(EIGHT, SPADES));
         CardMemory memory = new CardMemory();
-        IntBuffer r1 = HoldemRules.doStrait(cards);
+        IntArrayCircularBuffer r1 = HoldemRules.doStrait(cards);
         assertEquals(5, r1.limit());
         /*face*/
         assertEquals(QUEEN.ordinal(), r1.get(0) >>> 16);
@@ -207,9 +207,9 @@ public class HoldemRulesTest extends TestCase {
     }
 
     public void testDoStraitFlush() throws Exception {
-        IntBuffer cards;
+        IntArrayCircularBuffer cards;
         {
-            cards = (IntBuffer) IntBuffer.wrap(
+            cards = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(
                     new int[]{
                             (card(ACE, HEARTS))
                             , (card(KING, SPADES))
@@ -219,17 +219,17 @@ public class HoldemRulesTest extends TestCase {
                             , (card(NINE, SPADES))
                             , (card(EIGHT, SPADES))}).rewind().mark();
 
-            final Pair<Play, IntBuffer> pair = assess(cards);
+            final Pair<Play, IntArrayCircularBuffer> pair = assess(cards);
             final Play play = pair.getFirst();
             assertEquals(STRAIGHTFLUSH, play);
-            IntBuffer r1 = pair.getSecond();
+            IntArrayCircularBuffer r1 = pair.getSecond();
             assertEquals(5, r1.limit());
             /*face*/
             final int king = KING.ordinal();
             assertEquals(king, face(r1.get(0)));
         }
         {
-            cards = (IntBuffer) IntBuffer.wrap(
+            cards = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(
                     new int[]{
                             (card(ACE, HEARTS))
                             , (card(SEVEN, HEARTS))
@@ -242,10 +242,10 @@ public class HoldemRulesTest extends TestCase {
                             , (card(TWO, HEARTS))}).rewind().mark();
 
             final CardMemory memory = new CardMemory();
-            final Pair<Play, IntBuffer> pair = assess(cards, memory);
+            final Pair<Play, IntArrayCircularBuffer> pair = assess(cards, memory);
             final Play play = pair.getFirst();
             assertEquals(STRAIGHTFLUSH, play);
-            IntBuffer r1 = pair.getSecond();
+            IntArrayCircularBuffer r1 = pair.getSecond();
             assertEquals(5, r1.limit());
             /*face*/
             final int boss = SEVEN.ordinal();
@@ -253,7 +253,7 @@ public class HoldemRulesTest extends TestCase {
             assertEquals(boss, i);
         }
         {
-            cards = (IntBuffer) IntBuffer.wrap(
+            cards = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(
                     new int[]{
                             (card(ACE, HEARTS))
                             , (card(SEVEN, HEARTS))
@@ -264,14 +264,14 @@ public class HoldemRulesTest extends TestCase {
                             , (card(THREE, SPADES))
                             , (card(TWO, HEARTS))}).rewind().mark();
             final CardMemory memory = new CardMemory();
-            final Pair<Play, IntBuffer> intBufferPair = assess(cards, memory);
+            final Pair<Play, IntArrayCircularBuffer> intBufferPair = assess(cards, memory);
 
             final Play play = intBufferPair.getFirst();
-            final IntBuffer buffer = intBufferPair.getSecond();
+            final IntArrayCircularBuffer buffer = intBufferPair.getSecond();
             assertEquals(ACE.ordinal(), face(buffer.get(0)));
         }
 //        {
-//            cards = (IntBuffer) IntBuffer.wrap(
+//            cards = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(
 //                    new int[]{
 //                            (card(KING, DIAMONDS)),
 //                            (card(KING, SPADES)),
@@ -284,7 +284,7 @@ public class HoldemRulesTest extends TestCase {
 
     public void testDoRoyalStraitFlush() throws Exception {
 
-        final IntBuffer cards = (IntBuffer) IntBuffer.wrap(
+        final IntArrayCircularBuffer cards = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(
                 new int[]{
                         (card(ACE, DIAMONDS))
                         , (card(ACE, HEARTS))
@@ -299,7 +299,7 @@ public class HoldemRulesTest extends TestCase {
                         , (card(EIGHT, HEARTS))
                         , (card(EIGHT, SPADES))
                         , (card(SEVEN, SPADES))}).mark();
-        final Pair<Play, IntBuffer> pair = assess(cards);
+        final Pair<Play, IntArrayCircularBuffer> pair = assess(cards);
 
 
         final Play play = pair.getFirst();
@@ -307,7 +307,7 @@ public class HoldemRulesTest extends TestCase {
 
         assertEquals(ROYALSTRAIGHTFLUSH, play);
 
-        final IntBuffer r1 = pair.getSecond();
+        final IntArrayCircularBuffer r1 = pair.getSecond();
         assertEquals(SPADES.ordinal(), suit(r1.get()));
 
         /*face*/
@@ -316,8 +316,8 @@ public class HoldemRulesTest extends TestCase {
 
     public void testDoFullHouse() throws Exception {
         {
-            IntBuffer cards;
-            cards = (IntBuffer) IntBuffer.wrap(new int[]{
+            IntArrayCircularBuffer cards;
+            cards = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(new int[]{
                     (card(EIGHT, DIAMONDS)),
                     (card(SEVEN, CLUBS)),
                     (card(SEVEN, SPADES)),
@@ -326,18 +326,18 @@ public class HoldemRulesTest extends TestCase {
                     (card(FOUR, CLUBS)),
                     (card(TWO, DIAMONDS)),}).mark();
 
-            final Pair<Play, IntBuffer> pair = Play.assess(cards);
+            final Pair<Play, IntArrayCircularBuffer> pair = Play.assess(cards);
             assertEquals(Play.FULLHOUSE, pair.getFirst());
-            IntBuffer r1 = pair.getSecond();
+            IntArrayCircularBuffer r1 = pair.getSecond();
             assertNotNull(r1);
             assertEquals(5, r1.limit());
         }
     }
  
     public void testDoTwoPair() throws Exception {
-        IntBuffer r1;
-        IntBuffer cards;
-        cards = (IntBuffer) IntBuffer.wrap(new int[]
+        IntArrayCircularBuffer r1;
+        IntArrayCircularBuffer cards;
+        cards = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(new int[]
                 {
                         (card(KING, DIAMONDS)),
                         (card(KING, SPADES)),
@@ -346,7 +346,7 @@ public class HoldemRulesTest extends TestCase {
                         (card(EIGHT, DIAMONDS)),
                 }).mark();
 
-        final Pair<Play, IntBuffer> pair = Play.assess(cards);
+        final Pair<Play, IntArrayCircularBuffer> pair = Play.assess(cards);
         assertEquals(Play.TWOPAIR, pair.getFirst());
         r1 = pair.getSecond();
         assertEquals(4, r1.limit());
@@ -354,7 +354,7 @@ public class HoldemRulesTest extends TestCase {
         /*face*/
         assertEquals(KING.ordinal(), r1.get(0) >>> 16);
 
-        cards = (IntBuffer) IntBuffer.wrap(new int[]
+        cards = (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(new int[]
                 {
                         (card(ACE, DIAMONDS)),
                         (card(KING, SPADES)),
@@ -363,7 +363,7 @@ public class HoldemRulesTest extends TestCase {
                         (card(EIGHT, DIAMONDS)),
                 }).mark();
 
-        final Pair<Play, IntBuffer> pair2 = Play.assess(cards);
+        final Pair<Play, IntArrayCircularBuffer> pair2 = Play.assess(cards);
         assertEquals(Play.PAIR, pair2.getFirst());  // only one pair (QQ), not two pair
 
         //KdJdTs9s8h3h3s

@@ -3,18 +3,12 @@ package poker.player;
 import static poker.eval.CardUtil.*;
 import poker.eval.*;
 
-import java.nio.*;
 import java.util.*;
 import java.util.logging.*;
 
-/**
- * User: jim
- * Date: Sep 8, 2007
- * Time: 6:13:25 PM
- */
 public abstract class Seat extends CardMemory {
 
-    public IntBuffer cards = EMPTYCARDS;
+    public IntArrayCircularBuffer cards = EMPTYCARDS;
     public static boolean test = false;
 
     static {
@@ -53,7 +47,7 @@ public abstract class Seat extends CardMemory {
         StringBuilder builder = new StringBuilder();
         builder.append(getPlay());
         builder.append(':');
-        builder.append(toChar((IntBuffer) cards.rewind().mark()));
+        builder.append(toChar(cards.rewind().mark()));
         builder.append("[");
         builder.append("name='");
         builder.append(getName());

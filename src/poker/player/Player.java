@@ -4,14 +4,6 @@ import static poker.eval.CardUtil.*;
 import poker.eval.*;
 import poker.strat.*;
 
-import java.nio.*;
-
-/**
- * User: jim
- * Date: Aug 22, 2007
- * Time: 3:31:53 AM
- */
-
 public class Player extends Seat implements Comparable<Player> {
 
     public TurnAct act;
@@ -21,8 +13,8 @@ public class Player extends Seat implements Comparable<Player> {
     public Strategy strategy;
     public boolean out;
 
-    public IntBuffer pocket = EMPTYCARDS;
-    private IntBuffer shot;
+    public IntArrayCircularBuffer pocket = EMPTYCARDS;
+    private IntArrayCircularBuffer shot;
 
 
     public Player() {
@@ -43,7 +35,7 @@ public class Player extends Seat implements Comparable<Player> {
         this.shot = EMPTYCARDS;
     }
 
-    public Player(IntBuffer... hands) {
+    public Player(IntArrayCircularBuffer... hands) {
         init();
         if (hands.length == 1) cards = hands[0];
         else
@@ -76,9 +68,9 @@ public class Player extends Seat implements Comparable<Player> {
         builder.append(", act=");
         builder.append(act);
         builder.append(", pocket=");
-        builder.append(toChar((IntBuffer) pocket.rewind().mark()));
+        builder.append(toChar(pocket.rewind().mark()));
         builder.append(", shot=");
-        builder.append(toChar((IntBuffer) shot.rewind().mark()));
+        builder.append(toChar(shot.rewind().mark()));
         builder.append(']');
         return builder.toString();
     }
@@ -94,7 +86,7 @@ public class Player extends Seat implements Comparable<Player> {
     public int compareTo(final Player other) {
         int eq = getPlay().ordinal() - other.getPlay().ordinal();
         if (eq == 0)
-            eq = compareHighCard((IntBuffer) shot.rewind().mark(), (IntBuffer) other.shot.rewind().mark());
+            eq = compareHighCard(shot.rewind().mark(), other.shot.rewind().mark());
         if (eq == 0)
             eq = compareHighCard(mergeSortHands(pocket), mergeSortHands(other.pocket));
         return eq;
@@ -103,9 +95,9 @@ public class Player extends Seat implements Comparable<Player> {
     public Play getPlay() {
 
         if (play == null || cards.limit() != lastCount) {
-            Pair<Play, IntBuffer> pair = Play.assess(cards, this);
+            Pair<Play, IntArrayCircularBuffer> pair = Play.assess(cards, this);
             play = pair.getFirst();
-            this.shot = (IntBuffer) pair.getSecond().rewind().mark();
+            this.shot = pair.getSecond().rewind().mark();
             lastCount = cards.limit();
         }
         return play;

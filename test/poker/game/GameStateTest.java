@@ -29,7 +29,7 @@ public class GameStateTest extends TestCase {
         player = new Player();
         dealer.players.add(player);
         dealer.deck.setCards(
-                (IntBuffer) IntBuffer.wrap(
+                (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(
                         new int[]{
                                 card(THREE, HEARTS), card(THREE, CLUBS), card(EIGHT, CLUBS),
                                 card(SIX, CLUBS), card(QUEEN, SPADES), card(SEVEN, SPADES),
@@ -49,7 +49,7 @@ public class GameStateTest extends TestCase {
 
         GameState.start(dealer);
 
-        final IntBuffer deck = dealer.deck.getCards();
+        final IntArrayCircularBuffer deck = dealer.deck.getCards();
         deck.rewind().mark();
         final int[] dst = new int[deck.limit()];
         deck.get(dst);

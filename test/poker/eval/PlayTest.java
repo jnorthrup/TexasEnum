@@ -15,7 +15,7 @@ import poker.player.*;
 import java.nio.*;
 
 public class PlayTest extends TestCase {
-    IntBuffer cards =  (IntBuffer) IntBuffer.wrap(
+    IntArrayCircularBuffer cards =  (IntArrayCircularBuffer) IntArrayCircularBuffer.wrap(
                     new int[]{
                             (card(KING, DIAMONDS)),
                             (card(KING, SPADES)),
@@ -24,10 +24,10 @@ public class PlayTest extends TestCase {
                             (card(EIGHT, DIAMONDS))}).rewind().mark();
 
     public void testAssess() throws Exception {
-        final Pair<Play, IntBuffer> intBufferPair = Play.assess((IntBuffer) cards.reset());
+        final Pair<Play, IntArrayCircularBuffer> intBufferPair = Play.assess((IntArrayCircularBuffer) cards.reset());
         final Play play = intBufferPair.getFirst();
         assertEquals(PAIR, play);
-        final IntBuffer buffer = intBufferPair.getSecond();
+        final IntArrayCircularBuffer buffer = intBufferPair.getSecond();
         buffer.rewind().mark();
         final int i = buffer.get(0);
         assertEquals(KING, face((Integer) i));

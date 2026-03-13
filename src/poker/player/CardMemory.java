@@ -2,55 +2,36 @@ package poker.player;
 
 import poker.eval.*;
 
-import java.nio.*;
 import java.util.*;
 
-/**
- * cache holds prior recognized hands.
- * <p/>
- * mpos(PLAY) method sets up the cache with a mark and an offset.
- * <p/>
- * cache slotws with no prior recognition begin life with -1 as the first card
- */
-
 public class CardMemory {
-    private final IntBuffer cache;
+    private final IntArrayCircularBuffer cache;
     private static final int PLAY_LEN = Play.values().length;
     public static final int CACHE_SIZE = 7;
     private static final int MEM_SIZE = CACHE_SIZE * PLAY_LEN;
-    private static final IntBuffer CLEAN = IntBuffer.allocate(MEM_SIZE);
+    private static final IntArrayCircularBuffer CLEAN = IntArrayCircularBuffer.allocate(MEM_SIZE);
     public int lastCount;
     public int ranks;
-    public ArrayList<IntBuffer> runs = new ArrayList<IntBuffer>();
-    public IntBuffer[] flush = {
+    public ArrayList<IntArrayCircularBuffer> runs = new ArrayList<IntArrayCircularBuffer>();
+    public IntArrayCircularBuffer[] flush = {
             BuffUtil.allocate(7),
             BuffUtil.allocate(7),
             BuffUtil.allocate(7),
             BuffUtil.allocate(7),
     };
     public int flushidx;
-    public IntBuffer straight =BuffUtil.EMPTY_SET;
+    public IntArrayCircularBuffer straight = BuffUtil.EMPTY_SET;
     public boolean ace1st;
-    public IntBuffer straightflush;
+    public IntArrayCircularBuffer straightflush;
 
     public CardMemory() {
         cache = BuffUtil.allocate(MEM_SIZE);
         init();
     }
 
-    /**
-     * positions and mark's the cache beginning at the slot for the play
-     *
-     * @param play
-     * @return
-     */
-    public IntBuffer mpos(Play play) {
+    public IntArrayCircularBuffer mpos(Play play) {
         final int position = CACHE_SIZE * play.ordinal();
-        return (IntBuffer) ((IntBuffer) cache.position(position))
-                .slice()
-                .mark()
-                .limit(play.minimum);
-
+        return cache.position(position).slice().mark().limit(play.minimum);
     }
 
 
@@ -62,23 +43,23 @@ public class CardMemory {
         wipe();
     }
 
-    public IntBuffer slice() {
+    public IntArrayCircularBuffer slice() {
         return cache.slice();
     }
 
-    public IntBuffer duplicate() {
+    public IntArrayCircularBuffer duplicate() {
         return cache.duplicate();
     }
 
-    public IntBuffer asReadOnlyBuffer() {
-        return cache.asReadOnlyBuffer();
+    public IntArrayCircularBuffer asReadOnlyBuffer() {
+        return cache.duplicate();
     }
 
     public int get() {
         return cache.get();
     }
 
-    public IntBuffer put(int b) {
+    public IntArrayCircularBuffer put(int b) {
         return cache.put(b);
     }
 
@@ -86,48 +67,46 @@ public class CardMemory {
         return cache.get(index);
     }
 
-    public IntBuffer put(int index, int b) {
-        return cache.put(index, b);
+    public IntArrayCircularBuffer put(int index, int b) {
+        return cache.putAt(index, b);
     }
 
-    public IntBuffer get(int[] dst, int offset, int length) {
-        return cache.get(dst, offset, length);
+    public IntArrayCircularBuffer get(int[] dst, int offset, int length) {
+        for (int i = 0; i < length; i++) {
+            dst[offset + i] = cache.get(i);
+        }
+        return cache;
     }
 
-    public IntBuffer get(int[] dst) {
-        return cache.get(dst);
+    public IntArrayCircularBuffer get(int[] dst) {
+        return get(dst, 0, dst.length);
     }
 
-    public IntBuffer put(IntBuffer src) {
-        return cache.put(src);
+    public IntArrayCircularBuffer put(IntArrayCircularBuffer src) {
+        while (src.hasRemaining()) {
+            this.put(src.get());
+        }
+        return cache;
     }
 
-    public IntBuffer put(int[] src, int offset, int length) {
-        return cache.put(src, offset, length);
+    public IntArrayCircularBuffer put(int[] src, int offset, int length) {
+        for (int i = 0; i < length; i++) {
+            cache.put(src[offset + i]);
+        }
+        return cache;
     }
 
-    public IntBuffer put(int[] src) {
-        return cache.put(src);
+    public IntArrayCircularBuffer put(int[] src) {
+        return put(src, 0, src.length);
     }
 
-    public boolean hasArray() {
-        return cache.hasArray();
-    }
-
-    public int[] array() {
-        return cache.array();
-    }
-
-    public int arrayOffset() {
-        return cache.arrayOffset();
-    }
-
-    public IntBuffer compact() {
-        return cache.compact();
+    public IntArrayCircularBuffer clear() {
+        cache.clear();
+        return cache;
     }
 
     public boolean isDirect() {
-        return cache.isDirect();
+        return false;
     }
 
     public String toString() {
@@ -139,20 +118,20 @@ public class CardMemory {
     }
 
 
-    public int compareTo(IntBuffer that) {
-        return cache.compareTo(that);
+    public int compareTo(IntArrayCircularBuffer that) {
+        return 0;
     }
 
-    public IntBuffer mark() {
-        return (IntBuffer) cache.mark();
+    public IntArrayCircularBuffer mark() {
+        return cache.mark();
     }
 
-    public IntBuffer reset() {
-        return (IntBuffer) cache.reset();
+    public IntArrayCircularBuffer reset() {
+        return cache.reset();
     }
 
     public boolean isReadOnly() {
-        return cache.isReadOnly();
+        return false;
     }
 
     public boolean hasCacheEntry(Play play) {
