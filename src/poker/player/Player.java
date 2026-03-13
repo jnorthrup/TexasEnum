@@ -4,8 +4,6 @@ import static poker.eval.CardUtil.*;
 import poker.eval.*;
 import poker.strat.*;
 
-import java.nio.*;
-
 /**
  * User: jim
  * Date: Aug 22, 2007
@@ -21,8 +19,8 @@ public class Player extends Seat implements Comparable<Player> {
     public Strategy strategy;
     public boolean out;
 
-    public IntBuffer pocket = EMPTYCARDS;
-    private IntBuffer shot;
+    public int[] pocket = EMPTYCARDS;
+    private int[] shot;
 
 
     public Player() {
@@ -43,7 +41,7 @@ public class Player extends Seat implements Comparable<Player> {
         this.shot = EMPTYCARDS;
     }
 
-    public Player(IntBuffer... hands) {
+    public Player(int[]... hands) {
         init();
         if (hands.length == 1) cards = hands[0];
         else
@@ -76,15 +74,15 @@ public class Player extends Seat implements Comparable<Player> {
         builder.append(", act=");
         builder.append(act);
         builder.append(", pocket=");
-        builder.append(toChar((IntBuffer) pocket.rewind().mark()));
+        builder.append(toChar(pocket));
         builder.append(", shot=");
-        builder.append(toChar((IntBuffer) shot.rewind().mark()));
+        builder.append(toChar(shot));
         builder.append(']');
         return builder.toString();
     }
 
     public Player refresh() {
-        cards.clear();
+        cards = EMPTYCARDS;
         super.init();
         out = false;
         return this;
@@ -94,7 +92,7 @@ public class Player extends Seat implements Comparable<Player> {
     public int compareTo(final Player other) {
         int eq = getPlay().ordinal() - other.getPlay().ordinal();
         if (eq == 0)
-            eq = compareHighCard((IntBuffer) shot.rewind().mark(), (IntBuffer) other.shot.rewind().mark());
+            eq = compareHighCard(shot, other.shot);
         if (eq == 0)
             eq = compareHighCard(mergeSortHands(pocket), mergeSortHands(other.pocket));
         return eq;
@@ -102,11 +100,11 @@ public class Player extends Seat implements Comparable<Player> {
 
     public Play getPlay() {
 
-        if (play == null || cards.limit() != lastCount) {
-            Pair<Play, IntBuffer> pair = Play.assess(cards, this);
+        if (play == null || cards.length != lastCount) {
+            Pair<Play, int[]> pair = Play.assess(cards, this);
             play = pair.getFirst();
-            this.shot = (IntBuffer) pair.getSecond().rewind().mark();
-            lastCount = cards.limit();
+            this.shot = pair.getSecond();
+            lastCount = cards.length;
         }
         return play;
     }

@@ -10,7 +10,6 @@ import static poker.eval.CardUtil.*;
 import static poker.eval.Face.*;
 import static poker.eval.Suit.*;
 
-import java.nio.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -19,7 +18,7 @@ public class CardUtilTest extends TestCase {
     public void testAddSorted() throws Exception {
 
         /* build a hand one card at a time via addSorted, starting from EMPTYCARDS */
-        IntBuffer hand = EMPTYCARDS;
+        int[] hand = EMPTYCARDS;
         hand = addSorted(card(TWO, HEARTS), hand);
         hand = addSorted(card(ACE, SPADES), hand);
         hand = addSorted(card(TWO, SPADES), hand);
@@ -28,39 +27,35 @@ public class CardUtilTest extends TestCase {
         hand = addSorted(card(TWO, DIAMONDS), hand);
 
         /* expected: sorted by face (ACE=0 first), then suit within face */
-        IntBuffer expected = (IntBuffer) IntBuffer.wrap(new int[]{
+        int[] expected = new int[]{
                 card(ACE, CLUBS),
                 card(ACE, DIAMONDS),
                 card(ACE, SPADES),
                 card(TWO, DIAMONDS),
                 card(TWO, HEARTS),
                 card(TWO, SPADES),
-        }).mark();
+        };
 
-        final String result = new String(toChar((IntBuffer) hand.rewind().mark()));
-        final String expect = new String(toChar((IntBuffer) expected.rewind().mark()));
+        final String result = new String(toChar(hand));
+        final String expect = new String(toChar(expected));
         assertEquals(expect, result);
     }
 
 
     public void testMergeSortHands() throws Exception {
         /* mirror exactly how the game engine does it: wrap pocket, mergeSortHands, then add community */
-        IntBuffer pocket = (IntBuffer) IntBuffer.wrap(
-                new int[]{card(ACE, CLUBS), card(ACE, DIAMONDS)}
-        ).mark();
+        int[] pocket = new int[]{card(ACE, CLUBS), card(ACE, DIAMONDS)};
         // this is how GameState.deal creates sorted pocket
-        IntBuffer sortedPocket = mergeSortHands(pocket);
+        int[] sortedPocket = mergeSortHands(pocket);
 
         // this is how GameState.flop creates the community
-        IntBuffer community = (IntBuffer) IntBuffer.wrap(
-                new int[]{card(TWO, DIAMONDS), card(TWO, HEARTS), card(TWO, SPADES), -1, -1}
-        ).mark().limit(3);
+        int[] community = new int[]{card(TWO, DIAMONDS), card(TWO, HEARTS), card(TWO, SPADES)};
 
         // this is how GameState.flop merges them
-        final IntBuffer buffer = mergeSortHands(sortedPocket, community);
+        final int[] buffer = mergeSortHands(sortedPocket, community);
 
-        assertEquals(5, buffer.limit());
-        final String result = new String(toChar((IntBuffer) buffer.rewind().mark()));
+        assertEquals(5, buffer.length);
+        final String result = new String(toChar(buffer));
         assertEquals("AcAd2d2h2s", result);
     }
 
@@ -81,14 +76,14 @@ public class CardUtilTest extends TestCase {
     }
 
     public void testCompareDefault() throws Exception {
-        IntBuffer pair1 = BuffUtil.allocate(2)
-                .put(card(Face.ACE, Suit.SPADES))
-                .put(card(Face.ACE, HEARTS));
+        int[] pair1 = new int[2];
+        pair1[0] = card(Face.ACE, Suit.SPADES);
+        pair1[1] = card(Face.ACE, HEARTS);
 
 
-        IntBuffer pair2 = BuffUtil.allocate(2)
-                .put(card(TWO, CLUBS))
-                .put(card(TWO, HEARTS));
+        int[] pair2 = new int[2];
+        pair2[0] = card(TWO, CLUBS);
+        pair2[1] = card(TWO, HEARTS);
 
 
         final int i = CardUtil.compareDefault(pair1, pair2);
@@ -97,23 +92,23 @@ public class CardUtilTest extends TestCase {
     }
 
     public void testCompareHighCard() throws Exception {
-        IntBuffer hand1 = BuffUtil.allocate(2)
-                .put(card(ACE, CLUBS))
-                .put(card(ACE, DIAMONDS));
+        int[] hand1 = new int[2];
+        hand1[0] = card(ACE, CLUBS);
+        hand1[1] = card(ACE, DIAMONDS);
 
 
-        IntBuffer hand2 = BuffUtil.allocate(2)
-                .put(card(TWO, CLUBS))
-                .put(card(TWO, DIAMONDS));
+        int[] hand2 = new int[2];
+        hand2[0] = card(TWO, CLUBS);
+        hand2[1] = card(TWO, DIAMONDS);
 
 
-        final int i = compareHighCard((IntBuffer) hand1.rewind().mark(), (IntBuffer) hand2.rewind().mark());
+        final int i = compareHighCard(hand1, hand2);
         assertTrue(i < 0);
 
     }
 
     public void testToChar() throws Exception {
-        IntBuffer altHand = (IntBuffer) IntBuffer.wrap(new int[]{card(ACE, CLUBS), card(ACE, HEARTS)}).mark();
+        int[] altHand = new int[]{card(ACE, CLUBS), card(ACE, HEARTS)};
 
         final StringBuilder sb = new StringBuilder();
 
@@ -124,35 +119,35 @@ public class CardUtilTest extends TestCase {
     }
 
     public void testCompareBoat() throws Exception {
-        IntBuffer boat1 = BuffUtil.allocate(5)
-                .put(card(THREE, CLUBS))
-                .put(card(THREE, DIAMONDS))
-                .put(card(THREE, SPADES))
-                .put(card(ACE, DIAMONDS))
-                .put(card(ACE, SPADES));
+        int[] boat1 = new int[5];
+        boat1[0] = card(THREE, CLUBS);
+        boat1[1] = card(THREE, DIAMONDS);
+        boat1[2] = card(THREE, SPADES);
+        boat1[3] = card(ACE, DIAMONDS);
+        boat1[4] = card(ACE, SPADES);
 
-        IntBuffer boat2 = BuffUtil.allocate(5)
-                .put(card(TWO, HEARTS))
-                .put(card(TWO, DIAMONDS))
-                .put(card(TWO, SPADES))
-                .put(card(ACE, CLUBS))
-                .put(card(ACE, DIAMONDS));
+        int[] boat2 = new int[5];
+        boat2[0] = card(TWO, HEARTS);
+        boat2[1] = card(TWO, DIAMONDS);
+        boat2[2] = card(TWO, SPADES);
+        boat2[3] = card(ACE, CLUBS);
+        boat2[4] = card(ACE, DIAMONDS);
 
         assertTrue(HoldemRules.compareBoat(boat1, boat2) < 0);
 
-        boat1.clear();
-        boat2.clear();
-        boat1.put(card(THREE, CLUBS))
-                .put(card(THREE, DIAMONDS))
-                .put(card(THREE, SPADES))
-                .put(card(FOUR, DIAMONDS))
-                .put(card(FOUR, SPADES));
+        boat1 = new int[5];
+        boat2 = new int[5];
+        boat1[0] = card(THREE, CLUBS);
+        boat1[1] = card(THREE, DIAMONDS);
+        boat1[2] = card(THREE, SPADES);
+        boat1[3] = card(FOUR, DIAMONDS);
+        boat1[4] = card(FOUR, SPADES);
 
-        boat2.put(card(THREE, HEARTS))
-                .put(card(THREE, DIAMONDS))
-                .put(card(THREE, SPADES))
-                .put(card(TWO, CLUBS))
-                .put(card(TWO, DIAMONDS));
+        boat2[0] = card(THREE, HEARTS);
+        boat2[1] = card(THREE, DIAMONDS);
+        boat2[2] = card(THREE, SPADES);
+        boat2[3] = card(TWO, CLUBS);
+        boat2[4] = card(TWO, DIAMONDS);
 
         assertTrue(HoldemRules.compareBoat(boat1, boat2) < 0);
     }

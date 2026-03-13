@@ -5,7 +5,7 @@ import static poker.eval.Face.*;
 import static poker.eval.BuffUtil.*;
 import poker.player.*;
 
-import java.nio.*;
+import java.util.*;
 import static java.lang.Math.min;
 
 /**
@@ -13,15 +13,17 @@ import static java.lang.Math.min;
  * User: jim
  * Date: Aug 11, 2007
  * Time: 2:51:38 AM
+ * 
+ * Replaced IntBuffer with int[] for memory efficiency.
  */
 @SuppressWarnings({"ConstantConditions"})
 
 public enum Play {
     ROYALSTRAIGHTFLUSH(5) {
-        IntBuffer recognize2(IntBuffer hand, CardMemory memory) {
+        int[] recognize2(int[] hand, CardMemory memory) {
             if (memory.ranks < 5 && !memory.ace1st) return null;
-            final IntBuffer res = STRAIGHTFLUSH.recognize2(hand, memory);
-            if (res != null && face(res.get(0)) == ACE.ordinal())
+            final int[] res = STRAIGHTFLUSH.recognize2(hand, memory);
+            if (res != null && face(res[0]) == ACE.ordinal())
                 return res;
             return null;
         }
@@ -30,82 +32,80 @@ public enum Play {
     STRAIGHTFLUSH(5) {
 
 
-        IntBuffer recognize2(IntBuffer hand, CardMemory memory) {
+        int[] recognize2(int[] hand, CardMemory memory) {
 
-            if (memory.straightflush != BuffUtil.EMPTY_SET) {
+            if (memory.straightflush != null && memory.straightflush.length > 0) {
                 if (memory.straightflush != null) return memory.straightflush;
             } else {
                 return null;
             }
             if (memory.ranks < 5) return null;
-            IntBuffer res = null;
-            IntBuffer fbuf = memory.flush[memory.flushidx];
-            final IntBuffer sbuf = memory.straight;
-            if (sbuf.limit() < 5 || fbuf.limit() < 5) return null;
+            int[] res = null;
+            int[] fbuf = memory.flush[memory.flushidx];
+            final int[] sbuf = memory.straight;
+            if (sbuf.length < 5 || fbuf.length < 5) return null;
 
             {
-                final int card = sbuf.get(sbuf.limit() - 1);
+                final int card = sbuf[sbuf.length - 1];
                 final int i = face(card);
                 if (memory.ace1st && i == ACE.ordinal()) {
 
-                    IntBuffer t = BuffUtil.allocate(fbuf.limit());
-                    fbuf.reset();
-                    final int first = fbuf.get();
-                    t.put((fbuf));
-                    t.put(first);
-                    fbuf = (IntBuffer) t.reset();
+                    int[] t = BuffUtil.allocate(fbuf.length);
+                    final int first = fbuf[0];
+                    System.arraycopy(fbuf, 0, t, 0, fbuf.length);
+                    t[fbuf.length] = first;
+                    fbuf = t;
                 }
             }
 
-            fbuf.reset();
-            sbuf.reset();
-            int hit =
-                    0;
+            int fidx = 0;
+            int sidx = 0;
+            int hit = 0;
 
-            while (fbuf.hasRemaining() && sbuf.hasRemaining()) {
-                int f = fbuf.get();
-                int s = sbuf.get();
+            while (fidx < fbuf.length && sidx < sbuf.length) {
+                int f = fbuf[fidx++];
+                int s = sbuf[sidx++];
                 final int ff = face(f);
                 final int sf = face(s);
 
                 if (ff == sf) {
                     hit++;
                     if (hit == 5) {
-                        res = (IntBuffer) ((IntBuffer) fbuf.reset()).slice().mark().limit(5);
+                        res = Arrays.copyOfRange(fbuf, fidx - 5, fidx);
                         break;
                     }
                 } else {
                     hit = 0;
-                    if (fbuf.remaining() < 5 || sbuf.remaining() < 5)
+                    if (fbuf.length - fidx < 5 || sbuf.length - sidx < 5)
                         break;
                     if (ff > sf)
-                        s = sbuf.get();
+                        s = sbuf[sidx++];
                     else
-                        f = ((IntBuffer) fbuf.mark()).get();
+                        f = fbuf[fidx - 1];
                 }
             }
-            memory.straightflush = res == null ? BuffUtil.EMPTY_SET : res;
+            memory.straightflush = res == null ? new int[0] : res;
             return res;
         }
     },
 
     FOUROFAKIND(4) {
         public int compareHand
-                (IntBuffer
-                        cards, IntBuffer
+                (int[]
+                        cards, int[]
                         cards1) {
             return compareDefault(cards, cards1);
         }
 
-        IntBuffer recognize2
-                (IntBuffer
+        int[] recognize2
+                (int[]
                         hand, CardMemory
                         memory) {
-            final int len = hand.limit();
+            final int len = hand.length;
             int alen = len - 4;
             if (memory.ranks <= 1 + alen) {
-                for (IntBuffer run : memory.runs) {
-                    if (run.limit() == 4) return run;
+                for (int[] run : memory.runs) {
+                    if (run.length == 4) return run;
                 }
             }
             return null;
@@ -113,31 +113,29 @@ public enum Play {
     },
 
     FULLHOUSE(5) {
-        public int compareHand(IntBuffer cards, IntBuffer cards1) {
+        public int compareHand(int[] cards, int[] cards1) {
             return HoldemRules.compareBoat(cards, cards1);
         }
 
-        IntBuffer recognize2
-                (IntBuffer
+        int[] recognize2
+                (int[]
                         hand, CardMemory
                         memory) {
             boolean b2 = false, b3 = false;
-            IntBuffer swap = allocate(minimum);
-            final int len = hand.limit();
+            int[] swap = allocate(minimum);
+            final int len = hand.length;
             final int alen = len - 5;
             if (memory.ranks <= alen + 2) {
-                for (IntBuffer run : memory.runs) {
-                    if ((!b3) && run.limit() == 3) {
-                        swap.position(0);
-                        swap.put(run);
+                for (int[] run : memory.runs) {
+                    if ((!b3) && run.length == 3) {
+                        System.arraycopy(run, 0, swap, 0, 3);
                         b3 = true;
-                    } else if ((!b2) && run.limit() != 4) {
-                        swap.position(3);
-                        swap.put((IntBuffer) run.limit(2));
+                    } else if ((!b2) && run.length != 4) {
+                        System.arraycopy(run, 0, swap, 3, 2);
                         b2 = true;
                     }
                     if (b2 & b3)
-                        return (IntBuffer) swap.reset();
+                        return swap;
                 }
             }
             return null;
@@ -147,53 +145,53 @@ public enum Play {
      * flush parsing returns as many flush cards as have been found in order to facilitiate better straightflush recogniztion from the outcomes of flush
      */
     FLUSH(5) {
-        IntBuffer recognize2(IntBuffer hand, CardMemory memory) {
-            final IntBuffer flush = memory.flush[memory.flushidx];
-            return (IntBuffer) (flush.limit() > 4 ? flush.reset() : null);
+        int[] recognize2(int[] hand, CardMemory memory) {
+            final int[] flush = memory.flush[memory.flushidx];
+            return flush.length > 4 ? flush : null;
         }
     },
 
 
     STRAIGHT(5) {
-        IntBuffer recognize2(IntBuffer hand, CardMemory memory) {
-            final IntBuffer buffer = memory.straight;
-            final int i = buffer.limit();
-            return (IntBuffer) (i > 4 ? buffer.reset() : null);
+        int[] recognize2(int[] hand, CardMemory memory) {
+            final int[] buffer = memory.straight;
+            final int i = buffer.length;
+            return i > 4 ? buffer : null;
         }
     },
 
     THREEOFAKIND(3) {
-        IntBuffer recognize2
-                (IntBuffer
+        int[] recognize2
+                (int[]
                         hand, CardMemory
                         memory) {
-            int alen = hand.limit() - minimum;
+            int alen = hand.length - minimum;
             if (memory.ranks > 1 + alen) return null;
-            for (IntBuffer run : memory.runs)
-                if (run.limit() == 3) return run;
+            for (int[] run : memory.runs)
+                if (run.length == 3) return run;
             return null;
         }
     },
 
     TWOPAIR(4) {
-        IntBuffer recognize2
-                (IntBuffer
+        int[] recognize2
+                (int[]
                         hand, CardMemory
                         memory) {
-            IntBuffer swap = allocate(4);
+            int[] swap = allocate(4);
 
 
             if (memory.runs.size() > 1) {
-                swap.put(memory.runs.get(0));
-                swap.put(memory.runs.get(1));
+                System.arraycopy(memory.runs.get(0), 0, swap, 0, 2);
+                System.arraycopy(memory.runs.get(1), 0, swap, 2, 2);
                 return swap;
             }
             return null;
         }
     },
     PAIR(2) {
-        IntBuffer recognize2
-                (IntBuffer
+        int[] recognize2
+                (int[]
                         hand, CardMemory
                         memory) {
 
@@ -202,8 +200,8 @@ public enum Play {
         }
     },
     HIGH(1) {
-        IntBuffer recognize2
-                (IntBuffer
+        int[] recognize2
+                (int[]
                         hand, CardMemory
                         cardMemory) {
             return HoldemRules.doHighCard(hand);
@@ -211,13 +209,13 @@ public enum Play {
     },
     OUT(0) {
         public int compareHand
-                (IntBuffer
-                        ignorethis, IntBuffer
+                (int[]
+                        ignorethis, int[]
                         ignorethis2) {
             return 0;
         }
-        IntBuffer recognize2
-                (IntBuffer
+        int[] recognize2
+                (int[]
                         hand, CardMemory
                         cardMemory) {
             return EMPTYCARDS;
@@ -231,7 +229,7 @@ public enum Play {
         this.minimum = minimum;
     }
 
-    abstract IntBuffer recognize2(IntBuffer hand, CardMemory memory);
+    abstract int[] recognize2(int[] hand, CardMemory memory);
 
     /**
      * marshal the memory cache
@@ -240,10 +238,9 @@ public enum Play {
      * @param memory
      * @return
      */
-    public IntBuffer recognize(IntBuffer hand, CardMemory memory) {
-        IntBuffer res = null;
-        if (hand.rewind().mark().limit() >= minimum) {
-
+    public int[] recognize(int[] hand, CardMemory memory) {
+        int[] res = null;
+        if (hand.length >= minimum) {
 
             res = this.recognize2(hand, memory);
 
@@ -251,33 +248,32 @@ public enum Play {
         return res;
     }
 
-    public static Pair<Play, IntBuffer> assess(IntBuffer cards) {
+    public static Pair<Play, int[]> assess(int[] cards) {
         return assess(cards, new CardMemory());
     }
 
-    public static Pair<Play, IntBuffer> assess(IntBuffer cards, CardMemory memory) {
+    public static Pair<Play, int[]> assess(int[] cards, CardMemory memory) {
 
-        Pair<Play, IntBuffer> res = null;
-        final IntBuffer hand = (IntBuffer) cards.asReadOnlyBuffer().mark();
+        Pair<Play, int[]> res = null;
+        final int[] hand = cards.clone();
 
-        if (memory.lastCount != cards.limit()) {
+        if (memory.lastCount != cards.length) {
             memory.wipe();
             handRanks(hand, memory);
         }
 
-        memory.lastCount = cards.limit();
+        memory.lastCount = cards.length;
 
         for (final Play play : Play.values()) {
-            final IntBuffer swap = play.recognize(hand, memory);
+            final int[] swap = play.recognize(hand, memory);
             if (swap != null) {
-                swap.rewind().mark();
-                res = new Pair<Play, IntBuffer>() {
+                res = new Pair<Play, int[]>() {
                     public Play getFirst() {
                         return play;
                     }
 
-                    public IntBuffer getSecond() {
-                        return (IntBuffer) swap.reset();
+                    public int[] getSecond() {
+                        return swap;
                     }
                 };
                 break;
@@ -291,19 +287,17 @@ public enum Play {
      *
      * @return
      */
-    static void handRanks(IntBuffer hand, CardMemory memory) {
+    static void handRanks(int[] hand, CardMemory memory) {
         memory.ranks = 0;
-        hand.reset();
         memory.runs.clear();
 
         memory.flushidx = 0;
-        int hlen;
-        hlen = hand.limit();
+        int hlen = hand.length;
 
-        memory.straight = EMPTY_SET;
+        memory.straight = new int[0];
         memory.straightflush = null;
 
-        IntBuffer straight = allocate(hlen);
+        int[] straight = allocate(hlen);
 
         for (int i = 0; i < memory.flush.length; i++)
             memory.flush[i] = BuffUtil.allocate(hlen);
@@ -312,15 +306,15 @@ public enum Play {
 
         int card = -1;
         int prev = card;
-        memory.ace1st = ACE.ordinal() == face(hand.get(0));
+        memory.ace1st = ACE.ordinal() == face(hand[0]);
 
         for (int curs = 0; curs < hlen; curs++, prev = card) {
-            card = hand.get(curs);
+            card = hand[curs];
             final int face = face(card);
             final int pface = face(prev);
             final boolean same = face == pface;
             final int suit = suit(card);
-            memory.flush[suit].put(card);
+            memory.flush[suit][curs] = card;
 
             final boolean ending = (curs == (hlen - 1));
 
@@ -333,7 +327,8 @@ public enum Play {
 
             if (!same || ending)
                 if (run != 0) {
-                    memory.runs.add((IntBuffer) ((IntBuffer) hand.position(curs - run)).slice().mark().limit(run + 1));
+                    int[] runBuf = Arrays.copyOfRange(hand, curs - run, curs + 1);
+                    memory.runs.add(runBuf);
                     run = 0;
                 }
 
@@ -342,35 +337,35 @@ public enum Play {
 
             boolean wheel = false;
             if (consecutive) {
-                straight.put(card);
+                straight[curs] = card;
                 wheel = memory.ace1st &&
                         face == TWO.ordinal() &&
-                        face(straight.get(0)) == FIVE.ordinal();
+                        face(straight[0]) == FIVE.ordinal();
                 if (wheel) {
-                    IntBuffer tmp = (IntBuffer) allocate(hlen).mark();
-                    tmp.put((IntBuffer) straight.flip());
-                    tmp.put(hand.get(0));
+                    int[] tmp = BuffUtil.allocate(hlen);
+                    System.arraycopy(straight, 0, tmp, 0, hlen);
+                    tmp[hlen] = hand[0];
                     straight = tmp;
                 }
                 if (!ending && !wheel) continue; //wheel ends straights
             }
 
 
-            if (ending || wheel || straight.position() >= memory.straight.limit())  //guarantee that equal length straights favor the first
+            if (ending || wheel || curs >= memory.straight.length)  //guarantee that equal length straights favor the first
             {
-                memory.straight = (IntBuffer) straight.flip().mark();
+                memory.straight = Arrays.copyOfRange(straight, 0, curs + 1);
                 if (ending)
                     break;
                 straight = allocate(hlen - curs);
             } else
-                straight.reset();
-            straight.put(card);
+                straight = Arrays.copyOfRange(straight, 0, curs);
+            straight[curs] = card;
         }
 
         int max = 0;
         for (int i = 0; i < 4; i++) {
-            final IntBuffer flush = memory.flush[i];
-            final int slen = flush.flip().mark().limit();
+            final int[] flush = memory.flush[i];
+            final int slen = flush.length;
             if (slen > max) {
                 memory.flushidx = i;
                 max = slen;
@@ -378,7 +373,7 @@ public enum Play {
         }
     }
 
-    public int compareHand(IntBuffer hand1, IntBuffer hand2) {
+    public int compareHand(int[] hand1, int[] hand2) {
         return compareDefault(hand1, hand2);
     }
 }

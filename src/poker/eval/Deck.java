@@ -6,7 +6,6 @@ package poker.eval;
 
 import poker.player.*;
 
-import java.nio.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -22,25 +21,22 @@ public final class Deck {
     public static final int DECK_SIZE = FACES_LEN * SUITS_LEN;
     static final char[] faces = new char[Face.values().length];
     static final char[] suits = new char[Suit.values().length];
-    static private final IntBuffer deck = (IntBuffer) IntBuffer.wrap(new int[DECK_SIZE]).mark();
-    private IntBuffer cards = (IntBuffer) ((IntBuffer) BuffUtil.allocate(DECK_SIZE)).put(deck).mark();
+    static private final int[] deck = new int[DECK_SIZE];
+    private int[] cards = new int[DECK_SIZE];
 
     static {
         initFaces();
         initSuits();
 
-
-        final int[] seed = deck.array();
-
         int curs = 0;
         for (int f = 0; f < FACES_LEN; f++)
             for (int s = 0; s < SUITS_LEN; s++) {
                 final int v = f << 2 | s & 0x3;
-                seed[curs++] = v;
+                deck[curs++] = v;
             }
 
         if (Seat.test)
-            Logger.getAnonymousLogger().info(String.valueOf(CardUtil.toChar((IntBuffer) deck.reset())));
+            Logger.getAnonymousLogger().info(String.valueOf(CardUtil.toChar(deck)));
     }
 
     private static void initSuits() {
@@ -70,52 +66,49 @@ public final class Deck {
 
         if (Seat.test) return;
 
-        final int[] ints = deck.array();
-
-
         List<Integer> b = new ArrayList<Integer>();
-        for (int aInteger : ints)
+        for (int aInteger : deck)
             b.add(aInteger);
 
         Collections.shuffle(b);
 
+        for (int i = 0; i < b.size(); i++)
+            cards[i] = b.get(i);
 
-        cards.rewind().mark();
-        for (Integer aInteger : b)
-            cards.put(aInteger);
-
-
-        cards.rewind().mark();
         if (Seat.test) {
             dump();
-            Logger.getAnonymousLogger().info(String.valueOf(CardUtil.toChar((IntBuffer) cards.duplicate().reset())));
+            Logger.getAnonymousLogger().info(String.valueOf(CardUtil.toChar(cards)));
         }
     }
 
     public void clear() {
-        cards.rewind().mark();
+        // Reset position to start
+        dealIndex = 0;
     }
+    
+    private int dealIndex = 0;
 
     public int deal() {
-        return cards.get();
+        return cards[dealIndex++];
     }
 
     public void burn() {
         deal();
     }
 
-    public IntBuffer getCards() {
-        return cards.slice();
+    public int[] getCards() {
+        return cards.clone();
     }
 
-    public void setCards(IntBuffer cards) {
+    public void setCards(int[] cards) {
         this.cards = cards;
+        this.dealIndex = 0;
     }
 
     public String dump() {
         final String[] strings = new String[Deck.DECK_SIZE];
         for (int i = 0; i < strings.length; i++)
-            strings[i] = Integer.toHexString(deck.get(i));
+            strings[i] = Integer.toHexString(deck[i]);
 
 
         final String s = Arrays.toString(strings);

@@ -6,7 +6,6 @@ import static poker.eval.CardUtil.*;
 import poker.player.*;
 import poker.strat.*;
 
-import java.nio.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -29,7 +28,7 @@ public enum GameState {
             dealer.blind = dealer.bet = 5;
 
             if (Dealer.test) {
-                final char[] chars = CardUtil.toChar((IntBuffer) dealer.deck.getCards().mark());
+                final char[] chars = CardUtil.toChar(dealer.deck.getCards());
                 StringBuilder foo = new StringBuilder();
                 foo.append(chars);
                 if (Seat.test)
@@ -50,12 +49,11 @@ public enum GameState {
             for (Player player : dealer.players)
                 if (!player.out) {
                     player.pocket =
-                            (IntBuffer) IntBuffer.wrap(
-                                    new int[]{
-                                            (dealer.deck.deal()),
-                                            (dealer.deck.deal()),
-                                    }).mark();
-                    player.cards = (IntBuffer) mergeSortHands(player.pocket).rewind().mark();
+                            new int[]{
+                                    (dealer.deck.deal()),
+                                    (dealer.deck.deal()),
+                            };
+                    player.cards = mergeSortHands(player.pocket);
                 }
 
             dump(dealer);
@@ -103,7 +101,7 @@ public enum GameState {
         }},
     /**
      * After the betting round ends, the dealer discards the top card
-     * of the xcards. This is called a burn card. This is done to
+     * of the deck. This is called a burn card. This is done to
      * prevent cheating.
      */
     burn1 {
@@ -119,17 +117,15 @@ public enum GameState {
     flop {
         public void update(Dealer dealer) {
 
-            final IntBuffer flop = dealer.cards = (IntBuffer) IntBuffer.wrap(
-                    new int[]{
-                            (dealer.deck.deal()),
-                            (dealer.deck.deal()),
-                            (dealer.deck.deal()),
-                            -1, -1
-                    }).mark().limit(3);
+            final int[] flop = dealer.cards = new int[]{
+                    (dealer.deck.deal()),
+                    (dealer.deck.deal()),
+                    (dealer.deck.deal()),
+                    -1, -1
+            };
             for (Player player : dealer.players) {
                 if (!player.out) {
-                    flop.reset();
-                    player.cards = mergeSortHands(player.cards, flop);
+                    player.cards = mergeSortHands(player.cards, Arrays.copyOfRange(flop, 0, 3));
                 }
             }
             dump(dealer);
@@ -157,8 +153,7 @@ round2 {
         public void update(Dealer dealer) {
             int turn = dealer.deck.deal();
 
-            dealer.cards.limit(4);
-            dealer.cards.put(3, turn);
+            dealer.cards[3] = turn;
 
             for (Player player : dealer.players)
                 if (!player.out)
@@ -200,8 +195,7 @@ round2 {
         public void update(Dealer dealer) {
             int river = dealer.deck.deal();
 
-            dealer.cards.limit(5);
-            dealer.cards.put(4, river);
+            dealer.cards[4] = river;
 
             for (Player player : dealer.players)
                 if (!player.out)

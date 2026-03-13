@@ -12,26 +12,24 @@ import static poker.eval.Play.*;
 import static poker.eval.Suit.*;
 import poker.player.*;
 
-import java.nio.*;
+import java.util.*;
 
 public class PlayTest extends TestCase {
-    IntBuffer cards =  (IntBuffer) IntBuffer.wrap(
-                    new int[]{
-                            (card(KING, DIAMONDS)),
-                            (card(KING, SPADES)),
-                            (card(QUEEN, SPADES)),
-                            (card(JACK, SPADES)),
-                            (card(EIGHT, DIAMONDS))}).rewind().mark();
+    int[] cards = new int[]{
+            (card(KING, DIAMONDS)),
+            (card(KING, SPADES)),
+            (card(QUEEN, SPADES)),
+            (card(JACK, SPADES)),
+            (card(EIGHT, DIAMONDS))};
 
     public void testAssess() throws Exception {
-        final Pair<Play, IntBuffer> intBufferPair = Play.assess((IntBuffer) cards.reset());
+        final Pair<Play, int[]> intBufferPair = Play.assess(cards);
         final Play play = intBufferPair.getFirst();
         assertEquals(PAIR, play);
-        final IntBuffer buffer = intBufferPair.getSecond();
-        buffer.rewind().mark();
-        final int i = buffer.get(0);
+        final int[] buffer = intBufferPair.getSecond();
+        final int i = buffer[0];
         assertEquals(KING, face((Integer) i));
-        assertEquals(2, buffer.limit());
+        assertEquals(2, buffer.length);
     }
- 
+
 }

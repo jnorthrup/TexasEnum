@@ -3,7 +3,6 @@ package poker.player;
 import static poker.eval.CardUtil.*;
 import poker.eval.*;
 
-import java.nio.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -14,7 +13,7 @@ import java.util.logging.*;
  */
 public abstract class Seat extends CardMemory {
 
-    public IntBuffer cards = EMPTYCARDS;
+    public int[] cards = EMPTYCARDS;
     public static boolean test = false;
 
     static {
@@ -53,7 +52,7 @@ public abstract class Seat extends CardMemory {
         StringBuilder builder = new StringBuilder();
         builder.append(getPlay());
         builder.append(':');
-        builder.append(toChar((IntBuffer) cards.rewind().mark()));
+        builder.append(toChar(cards));
         builder.append("[");
         builder.append("name='");
         builder.append(getName());

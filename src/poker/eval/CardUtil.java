@@ -3,7 +3,6 @@ package poker.eval;
 import static poker.eval.Deck.*;
 import static poker.eval.BuffUtil.*;
 
-import java.nio.*;
 import java.util.*;
 
 /**
@@ -11,13 +10,13 @@ import java.util.*;
  * Date: Oct 1, 2007
  * Time: 11:42:56 PM
  * 
- * Uses IntBuffer backed by pinned byte arrays for memory efficiency.
+ * Replaced IntBuffer with int[] for memory efficiency.
  * Cards are stored as single bytes using (face << 2) | suit encoding.
  */
 @SuppressWarnings({"StatementWithEmptyBody"})
 public class CardUtil {
 
-    static public final IntBuffer EMPTYCARDS = EMPTY_SET;
+    static public final int[] EMPTYCARDS = new int[0];
     static public final int STRAIT_MATCH_NEEDED = 4;
 
     // Card encoding: (face << 2) | suit
@@ -31,56 +30,53 @@ public class CardUtil {
     }
 
     /**
-     * merge sorts new cards into existing intbuffer hands.
+     * merge sorts new cards into existing int array hands.
      * @param card  card Value which is assumed at the end for a rewind
      * @param focus hand being added to presumed already ordered in comparable state
      * @return the hand, often but not reliably the original buf
      */
-    public static IntBuffer addSorted(int card, IntBuffer focus) {
+    public static int[] addSorted(int card, int[] focus) {
 
-        // ensure focus is a mutable BuffUtil buffer with room to grow
-        if (focus.capacity() <= focus.limit()) {
-            final int ilim = focus.limit();
-            final IntBuffer grown = (IntBuffer) BuffUtil.allocate(7).mark();
+        // ensure focus has room to grow
+        if (focus.length <= focus.length) {
+            final int ilim = focus.length;
+            final int[] grown = BuffUtil.allocate(7);
             if (ilim > 0) {
-                focus.rewind();
-                grown.put(focus);
+                System.arraycopy(focus, 0, grown, 0, ilim);
             }
-            focus = (IntBuffer) grown.limit(ilim).rewind().mark();
+            focus = grown;
         }
 
-        final int icap = focus.capacity();
-        final int ilim = focus.limit();
-
-        focus.reset();
+        final int icap = focus.length;
+        final int ilim = focus.length;
 
         int hwater = Deck.DECK_SIZE;
-        while (focus.mark().hasRemaining()) {
-            hwater = focus.get();
+        int idx = 0;
+        while (idx < ilim) {
+            hwater = focus[idx];
             if (hwater >= card)
                 break;
+            idx++;
         }
 
-        final int flim = focus.limit();
-        IntBuffer res;
+        final int flim = ilim;
+        int[] res;
         if (hwater == card) {
-            res = (IntBuffer) focus.rewind().mark();
+            res = focus;
         } else {
-
-            final IntBuffer mv = ((IntBuffer) focus.reset()).slice();
-
+            // shift elements to make room
             if (icap == flim) {
-                final IntBuffer swap = BuffUtil.allocate(icap + 1);
-                swap.put((IntBuffer) focus.reset());
-                focus = (IntBuffer) swap.limit(flim).rewind().mark();
+                final int[] swap = BuffUtil.allocate(icap + 1);
+                System.arraycopy(focus, 0, swap, 0, icap);
+                focus = swap;
             }
 
-            focus.limit(flim + 1);
-            final IntBuffer swap = focus.slice();
-            swap.position(1);
-            swap.put(mv);
-            focus.put(card);
-            res = (IntBuffer) focus.position(flim + 1).rewind().mark();
+            // shift right from idx to flim
+            for (int i = flim; i > idx; i--) {
+                focus[i] = focus[i - 1];
+            }
+            focus[idx] = card;
+            res = focus;
         }
         return res;
     }
@@ -90,37 +86,31 @@ public class CardUtil {
      * this method presupposes that Play must be equal to justify this cost, therefore buffer
      * lengths are going to be equal as well.
      */
-    static public int compareHighCard(IntBuffer hand1, IntBuffer hand2) {
-        hand1.rewind().mark();
-        hand2.rewind().mark();
+    static public int compareHighCard(int[] hand1, int[] hand2) {
         int eq = 0;
-        /*face*/
-        /*face*/
-        while (hand1.hasRemaining() && hand2.hasRemaining() &&
-                (eq = (face(hand1.get())) -
-                        (face(hand2.get()))) == 0) ;
-
-
+        int len = Math.min(hand1.length, hand2.length);
+        for (int i = 0; i < len; i++) {
+            eq = face(hand1[i]) - face(hand2[i]);
+            if (eq != 0) break;
+        }
         return eq;
     }
 
 
-    static public int compareDefault(IntBuffer cards1, IntBuffer cards2) {
-        /*face*/
-        /*face*/
-        return face(cards1.get(0)) - face(cards2.get(0));
+    static public int compareDefault(int[] cards1, int[] cards2) {
+        return face(cards1[0]) - face(cards2[0]);
     }
 
     /**
      * @param cards1
      * @deprecated
      */
-    public static IntBuffer hand(Collection<Card> cards1) {
+    public static int[] hand(Collection<Card> cards1) {
         final Card[] boat1 = cards1.toArray(new Card[0]);
 
-        final IntBuffer b1 = BuffUtil.allocate(boat1.length);
-        for (Card card : boat1)
-            b1.put(card(card));
+        final int[] b1 = BuffUtil.allocate(boat1.length);
+        for (int i = 0; i < boat1.length; i++)
+            b1[i] = card(boat1[i]);
         return b1;
     }
 
@@ -130,10 +120,7 @@ public class CardUtil {
     static public Card card(int card) {
         assert (card >= 0);
         assert (face(card) < FACES_LEN && suit(card) < SUITS_LEN);
-        /*suit*/
-        /*face*/
         Card card1 = new Card(Face.values()[face(card)], Suit.values()[suit(card)]);
-
         return card1;
     }
 
@@ -163,32 +150,28 @@ public class CardUtil {
      * @deprecated
      */
     static public Face face(final Integer card) {
-        /*face*/
         final int f = card >>> 2;
         return Face.values()[f];
     }
 
-    public static IntBuffer mergeSortHands(IntBuffer... hands) {
+    public static int[] mergeSortHands(int[]... hands) {
 
-        IntBuffer swap = hands[0];
+        int[] swap = hands[0];
         for (int i = 1; i < hands.length; i++) {
-            IntBuffer hand = hands[i];
-            hand.reset();
-            while (hand.hasRemaining()) {
-                final int card = hand.get();
-                swap = addSorted(card, swap);
+            int[] hand = hands[i];
+            for (int j = 0; j < hand.length; j++) {
+                swap = addSorted(hand[j], swap);
             }
-
         }
-        return (IntBuffer) swap.rewind().mark();
+        return swap;
     }
 
     /**
      * @param hand
      * @deprecated
      */
-    public static IntBuffer hand(Card[] hand) {
-        IntBuffer subject = BuffUtil.allocate(0);
+    public static int[] hand(Card[] hand) {
+        int[] subject = BuffUtil.allocate(0);
         for (Card card : hand) {
             final int card1 = card(card);
             subject = addSorted(card1, subject);
@@ -201,47 +184,34 @@ public class CardUtil {
      * @return null or successful match
      * @deprecated
      */
-    public static Card[] hand(IntBuffer hand) {
-        final Card[] cards = new Card[hand.limit()];
-        final IntBuffer h2 = (IntBuffer) hand.duplicate().rewind().mark();
-
+    public static Card[] hand(int[] hand) {
+        final Card[] cards = new Card[hand.length];
         for (int i = 0; i < cards.length; i++) {
-            Card card = null;
-            card = card(h2.get());
-            cards[i] = card;
+            cards[i] = card(hand[i]);
         }
         return cards;
     }
 
-    public static char[] toChar(IntBuffer cards) {
-        cards.reset();
-        final CharBuffer out = (CharBuffer) CharBuffer.allocate(2 * cards.limit()).mark();
-        while (cards.hasRemaining()) {
-            int card = cards.get();
-            /*face*/
+    public static char[] toChar(int[] cards) {
+        final char[] out = new char[2 * cards.length];
+        for (int i = 0; i < cards.length; i++) {
+            int card = cards[i];
             final int f = face(card);
-            /*suit*/
             final int s = suit(card);
-            final char face = Deck.faces[f];
-            final char suit = Deck.suits[s];
-            out.put(face).put(suit);
+            out[2 * i] = Deck.faces[f];
+            out[2 * i + 1] = Deck.suits[s];
         }
-        return out.array();
+        return out;
     }
 
-    public static int compareTwoPair(IntBuffer twin1, IntBuffer twin2) {
-        /*face*/
-        /*face*/
-        final int eq = face(twin1.get(0)) - face(twin2.get(0));
-        /*face*/
-        /*face*/
-        return eq != 0 ? eq : face(twin1.get(2)) - face(twin2.get(2));
+    public static int compareTwoPair(int[] twin1, int[] twin2) {
+        final int eq = face(twin1[0]) - face(twin2[0]);
+        return eq != 0 ? eq : face(twin1[2]) - face(twin2[2]);
     }
 
     @SuppressWarnings({"SameReturnValue"})
     static public int compareOut() {
         return 0;
     }
-
 
 }

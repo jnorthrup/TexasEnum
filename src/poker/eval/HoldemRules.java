@@ -5,7 +5,6 @@ import static poker.eval.Face.*;
 import static poker.eval.Play.*;
 import poker.player.*;
 
-import java.nio.*;
 import java.util.*;
 
 
@@ -14,134 +13,126 @@ public class HoldemRules {
 
     private static final int ACE_ORD = ACE.ordinal();
 
-    static public IntBuffer doHighCard(IntBuffer cards) {
-        return (IntBuffer) ((IntBuffer) cards.rewind().mark()).slice().limit(1);
+    static public int[] doHighCard(int[] cards) {
+        return Arrays.copyOfRange(cards, 0, 1);
     }
 
 
-    static IntBuffer doMatchWithExclusion(final IntBuffer hand, final int limit, final int avoidFace) {
-        hand.rewind().mark();
+    static int[] doMatchWithExclusion(final int[] hand, final int limit, final int avoidFace) {
         int pFace = -1;
-        final IntBuffer swap = BuffUtil.allocate(limit);
-        IntBuffer res = null;
-        while (hand.hasRemaining()) {
-            final int card = hand.get();
-            /*face*/
+        final int[] swap = BuffUtil.allocate(limit);
+        int[] res = null;
+        int swapIdx = 0;
+        for (int card : hand) {
             final int face = CardUtil.face(card);
             final int distance = face - pFace;
 
             if (distance != 0)
-                swap.reset();
+                swapIdx = 0;
             else if (face == avoidFace) {
-                swap.reset();
+                swapIdx = 0;
                 continue;
             }
             pFace = face;
-            swap.put(card);
+            swap[swapIdx++] = card;
 
-            if (!swap.hasRemaining()) {
-                res = (IntBuffer) swap.reset();
+            if (swapIdx >= limit) {
+                res = swap;
                 break;
             }
         }
         return res;
     }
 
-    static private IntBuffer doMatch(final IntBuffer cards, final int latchSize) {
+    static private int[] doMatch(final int[] cards, final int latchSize) {
 
-        cards.rewind().mark();
         int pFace = -1;
-        final IntBuffer swap = (IntBuffer) BuffUtil.allocate(latchSize).mark();
-        while (cards.hasRemaining()) {
-            final int card = cards.get();
-            /*face*/
+        final int[] swap = BuffUtil.allocate(latchSize);
+        int swapIdx = 0;
+        for (int card : cards) {
             final int face = CardUtil.face(card);
             final int distance = face - pFace;
 
             if (distance != 0)
-                swap.reset();
+                swapIdx = 0;
             pFace = face;
-            swap.put(card);
+            swap[swapIdx++] = card;
 
-            if (!swap.hasRemaining())
+            if (swapIdx >= latchSize)
                 return swap;
         }
         return null;
     }
 
 
-    static IntBuffer doFullHouse(IntBuffer hand, final CardMemory cardMemory) {
-        IntBuffer triple = THREEOFAKIND.recognize(hand, cardMemory);//uses cache
-        IntBuffer res = null;
+    static int[] doFullHouse(int[] hand, final CardMemory cardMemory) {
+        int[] triple = THREEOFAKIND.recognize(hand, cardMemory);//uses cache
+        int[] res = null;
         if (triple != null) {
-            IntBuffer pair = doMatchWithExclusion((IntBuffer) hand.rewind().mark(), 2, CardUtil.face(triple.get(0)));
+            int[] pair = doMatchWithExclusion(hand, 2, CardUtil.face(triple[0]));
 
             if (pair != null) {
                 res = BuffUtil.allocate(5);
-                triple.reset();
-                res.put(triple);
-                pair.reset();
-                res.put(pair);
-                res.reset();
+                System.arraycopy(triple, 0, res, 0, 3);
+                System.arraycopy(pair, 0, res, 3, 2);
             }
         }
         return res;
     }
 
-    static IntBuffer doPair(IntBuffer hand) {
+    static int[] doPair(int[] hand) {
         return fastMatch(hand, Play.PAIR);
     }
 
-    static IntBuffer doTrip(IntBuffer hand) {
+    static int[] doTrip(int[] hand) {
         return fastMatch(hand, Play.THREEOFAKIND);
     }
 
-    static IntBuffer doTwoPair(IntBuffer cards, CardMemory cardMemory) {
-        IntBuffer r1 = Play.PAIR.recognize(cards, cardMemory); //Recognize uses cache if possible.
+    static int[] doTwoPair(int[] cards, CardMemory cardMemory) {
+        int[] r1 = Play.PAIR.recognize(cards, cardMemory); //Recognize uses cache if possible.
         if (r1 == null) return null;
         // find second pair excluding the first
-        IntBuffer r2 = doMatchWithExclusion(cards, 2, CardUtil.face(r1.get(0)));
+        int[] r2 = doMatchWithExclusion(cards, 2, CardUtil.face(r1[0]));
         if (r2 == null) return null;
-        IntBuffer res = BuffUtil.allocate(4);
-        res.put(r1);
-        res.put(r2);
-        res.reset();
+        int[] res = BuffUtil.allocate(4);
+        System.arraycopy(r1, 0, res, 0, 2);
+        System.arraycopy(r2, 0, res, 2, 2);
         return res;
     }
 
-    static IntBuffer doFour(IntBuffer cards, CardMemory cardMemory) {
+    static int[] doFour(int[] cards, CardMemory cardMemory) {
         return Play.FOUROFAKIND.recognize(cards, cardMemory);
     }
 
-    static IntBuffer doStraight(IntBuffer cards, CardMemory cardMemory) {
+    static int[] doStraight(int[] cards, CardMemory cardMemory) {
         return Play.STRAIGHT.recognize(cards, cardMemory);
     }
 
-    static IntBuffer doFlush(IntBuffer cards, CardMemory cardMemory) {
+    static int[] doFlush(int[] cards, CardMemory cardMemory) {
         return Play.FLUSH.recognize(cards, cardMemory);
     }
 
-    static IntBuffer doStraightFlush(IntBuffer cards, CardMemory cardMemory) {
+    static int[] doStraightFlush(int[] cards, CardMemory cardMemory) {
         return Play.STRAIGHTFLUSH.recognize(cards, cardMemory);
     }
 
-    static IntBuffer doRoyalFlush(IntBuffer cards, CardMemory cardMemory) {
+    static int[] doRoyalFlush(int[] cards, CardMemory cardMemory) {
         return Play.ROYALSTRAIGHTFLUSH.recognize(cards, cardMemory);
     }
 
-    private static IntBuffer fastMatch(IntBuffer hand, Play play) {
+    private static int[] fastMatch(int[] hand, Play play) {
         CardMemory mem = new CardMemory();
         return play.recognize(hand, mem);
     }
 
-    public static int compareBoat(IntBuffer boat1, IntBuffer boat2) {
+    public static int compareBoat(int[] boat1, int[] boat2) {
         // compare three-of-a-kind part
-        int b1t = CardUtil.face(boat1.get(0));
-        int b2t = CardUtil.face(boat2.get(0));
+        int b1t = CardUtil.face(boat1[0]);
+        int b2t = CardUtil.face(boat2[0]);
         if (b1t != b2t) return b1t - b2t;
         // compare pair part
-        int b1p = CardUtil.face(boat1.get(3));
-        int b2p = CardUtil.face(boat2.get(3));
+        int b1p = CardUtil.face(boat1[3]);
+        int b2p = CardUtil.face(boat2[3]);
         return b1p - b2p;
     }
 }

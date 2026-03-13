@@ -8,8 +8,6 @@ package poker.eval;
 import junit.framework.*;
 import poker.player.*;
 
-import java.nio.*;
-
 public class DeckTest extends TestCase {
 
     public void testShuffle() throws Exception {
@@ -17,12 +15,11 @@ public class DeckTest extends TestCase {
         Deck deck = new Deck();
         deck.shuffle();
 
-        final IntBuffer cards = deck.getCards();
+        final int[] cards = deck.getCards();
 
-        cards.rewind().mark();
-        final int[] dst = new int[cards.limit()];
-        cards.get(dst);
-        final int[] ints = new int[cards.limit()];
+        final int[] dst = new int[cards.length];
+        System.arraycopy(cards, 0, dst, 0, cards.length);
+        final int[] ints = new int[cards.length];
         int b = 0;
         for (int i = 0; i < dst.length; i++) {
             b = dst[i];
