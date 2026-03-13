@@ -35,7 +35,7 @@ public final class Deck {
         int curs = 0;
         for (int f = 0; f < FACES_LEN; f++)
             for (int s = 0; s < SUITS_LEN; s++) {
-                final int v = f << 16 | s & 0x3;
+                final int v = f << 2 | s & 0x3;
                 seed[curs++] = v;
             }
 

@@ -382,5 +382,3 @@ public enum Play {
         return compareDefault(hand1, hand2);
     }
 }
-
-

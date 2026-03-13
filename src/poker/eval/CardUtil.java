@@ -1,6 +1,7 @@
 package poker.eval;
 
 import static poker.eval.Deck.*;
+import static poker.eval.BuffUtil.*;
 
 import java.nio.*;
 import java.util.*;
@@ -9,29 +10,30 @@ import java.util.*;
  * User: jim
  * Date: Oct 1, 2007
  * Time: 11:42:56 PM
+ * 
+ * Uses IntBuffer backed by pinned byte arrays for memory efficiency.
+ * Cards are stored as single bytes using (face << 2) | suit encoding.
  */
 @SuppressWarnings({"StatementWithEmptyBody"})
 public class CardUtil {
 
-    static public final IntBuffer EMPTYCARDS = IntBuffer.allocate(0).asReadOnlyBuffer();
+    static public final IntBuffer EMPTYCARDS = EMPTY_SET;
     static public final int STRAIT_MATCH_NEEDED = 4;
 
+    // Card encoding: (face << 2) | suit
+    // face: 0-12 (4 bits), suit: 0-3 (2 bits)
     final public static int suit(final int card) {
-        /*suit*/
         return card & 0x3;
     }
 
     final public static int face(final int card) {
-        /*face*/
-        return card >>> 16;
+        return card >>> 2;
     }
 
-
     /**
-     * merge sorts new cards into existing intbuffer hands.  attempts to benefit from excess capacity and will grow an buffer as needed
-     *
-     * @param card  card Value which is assumed at mpos(end) for a rewind
-     * @param focus hand being added to presumed already ordered in ca game comparable state
+     * merge sorts new cards into existing intbuffer hands.
+     * @param card  card Value which is assumed at the end for a rewind
+     * @param focus hand being added to presumed already ordered in comparable state
      * @return the hand, often but not reliably the original buf
      */
     public static IntBuffer addSorted(int card, IntBuffer focus) {
@@ -95,8 +97,8 @@ public class CardUtil {
         /*face*/
         /*face*/
         while (hand1.hasRemaining() && hand2.hasRemaining() &&
-                (eq = (hand1.get() >>> 16) -
-                        (hand2.get() >>> 16)) == 0) ;
+                (eq = (face(hand1.get())) -
+                        (face(hand2.get()))) == 0) ;
 
 
         return eq;
@@ -106,7 +108,7 @@ public class CardUtil {
     static public int compareDefault(IntBuffer cards1, IntBuffer cards2) {
         /*face*/
         /*face*/
-        return (cards1.get(0) >>> 16) - (cards2.get(0) >>> 16);
+        return face(cards1.get(0)) - face(cards2.get(0));
     }
 
     /**
@@ -130,7 +132,7 @@ public class CardUtil {
         assert (face(card) < FACES_LEN && suit(card) < SUITS_LEN);
         /*suit*/
         /*face*/
-        Card card1 = new Card(Face.values()[(card >>> 16)], Suit.values()[(card & 0x3)]);
+        Card card1 = new Card(Face.values()[face(card)], Suit.values()[suit(card)]);
 
         return card1;
     }
@@ -145,9 +147,7 @@ public class CardUtil {
     }
 
     public static int card(Face face, Suit suit) {
-        {//card begin
-            return (face.ordinal() << 16) | 0x3 & suit.ordinal();
-        } //card end
+        return (face.ordinal() << 2) | suit.ordinal();
     }
 
     /**
@@ -164,7 +164,7 @@ public class CardUtil {
      */
     static public Face face(final Integer card) {
         /*face*/
-        final int f = (int) card >>> 16;
+        final int f = card >>> 2;
         return Face.values()[f];
     }
 
@@ -219,9 +219,9 @@ public class CardUtil {
         while (cards.hasRemaining()) {
             int card = cards.get();
             /*face*/
-            final int f = card >>> 16;
+            final int f = face(card);
             /*suit*/
-            final int s = card & 0x3;
+            final int s = suit(card);
             final char face = Deck.faces[f];
             final char suit = Deck.suits[s];
             out.put(face).put(suit);
@@ -232,10 +232,10 @@ public class CardUtil {
     public static int compareTwoPair(IntBuffer twin1, IntBuffer twin2) {
         /*face*/
         /*face*/
-        final int eq = (twin1.get(0) >>> 16) - (twin2.get(0) >>> 16);
+        final int eq = face(twin1.get(0)) - face(twin2.get(0));
         /*face*/
         /*face*/
-        return eq != 0 ? eq : (twin1.get(2) >>> 16) - (twin2.get(2) >>> 16);
+        return eq != 0 ? eq : face(twin1.get(2)) - face(twin2.get(2));
     }
 
     @SuppressWarnings({"SameReturnValue"})
@@ -245,4 +245,3 @@ public class CardUtil {
 
 
 }
-

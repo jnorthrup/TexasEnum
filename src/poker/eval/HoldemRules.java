@@ -27,7 +27,7 @@ public class HoldemRules {
         while (hand.hasRemaining()) {
             final int card = hand.get();
             /*face*/
-            final int face = card >>> 16;
+            final int face = CardUtil.face(card);
             final int distance = face - pFace;
 
             if (distance != 0)
@@ -55,7 +55,7 @@ public class HoldemRules {
         while (cards.hasRemaining()) {
             final int card = cards.get();
             /*face*/
-            final int face = card >>> 16;
+            final int face = CardUtil.face(card);
             final int distance = face - pFace;
 
             if (distance != 0)
@@ -74,7 +74,7 @@ public class HoldemRules {
         IntBuffer triple = THREEOFAKIND.recognize(hand, cardMemory);//uses cache
         IntBuffer res = null;
         if (triple != null) {
-            IntBuffer pair = doMatchWithExclusion((IntBuffer) hand.rewind().mark(), 2, triple.get(0));
+            IntBuffer pair = doMatchWithExclusion((IntBuffer) hand.rewind().mark(), 2, CardUtil.face(triple.get(0)));
 
             if (pair != null) {
                 res = BuffUtil.allocate(5);
@@ -98,161 +98,50 @@ public class HoldemRules {
 
     static IntBuffer doTwoPair(IntBuffer cards, CardMemory cardMemory) {
         IntBuffer r1 = Play.PAIR.recognize(cards, cardMemory); //Recognize uses cache if possible.
-        IntBuffer res = null;
-        if (r1 != null) {
-            /*face*/
-            IntBuffer r2 = doMatchWithExclusion(cards, 2, r1.get(0) >>> 16);
-            if (r2 != null) {
-                res = BuffUtil.allocate(TWOPAIR.minimum);
-                r1.rewind().mark();
-                r2.rewind().mark();
-                res.put(r1);
-                res.put(r2);
-                res.reset();
-            }
-        }
+        if (r1 == null) return null;
+        // find second pair excluding the first
+        IntBuffer r2 = doMatchWithExclusion(cards, 2, CardUtil.face(r1.get(0)));
+        if (r2 == null) return null;
+        IntBuffer res = BuffUtil.allocate(4);
+        res.put(r1);
+        res.put(r2);
+        res.reset();
         return res;
     }
 
-    static int compareBoat(IntBuffer boat1, IntBuffer boat2) {
-        /*face*/
-        /*face*/
-        final int eq = (boat1.get(0) >>> 16) - (boat2.get(0) >>> 16);
-        /*face*/
-        /*face*/
-        return eq != 0 ? eq : (boat1.get(3) >>> 16) - (boat2.get(3) >>> 16);
+    static IntBuffer doFour(IntBuffer cards, CardMemory cardMemory) {
+        return Play.FOUROFAKIND.recognize(cards, cardMemory);
     }
 
-    static IntBuffer doQuads(IntBuffer hand) {
-        return fastMatch(hand, FOUROFAKIND);
+    static IntBuffer doStraight(IntBuffer cards, CardMemory cardMemory) {
+        return Play.STRAIGHT.recognize(cards, cardMemory);
     }
 
-    private static IntBuffer fastMatch(final IntBuffer hand, Play play) {
-        IntBuffer res = null;
-        int[] cards = new int[hand.limit()];
-        hand.rewind().mark();
-
-        hand.get(cards).rewind().mark();
-        final int l = hand.limit();
-        final int min = play.minimum;
-        for (int i = min - 1; i < l; i++) {
-            final int card = cards[i];
-            /*face*/
-            final int face = card >>> 16;
-            final int trail = i - min + 1;
-            /*face*/
-            final int preface = cards[trail] >>> 16;
-            if (face == preface) {
-                res = IntBuffer.wrap(Arrays.copyOfRange(cards, trail, i + 1));
-                break;
-            }
-        }
-        return res;
+    static IntBuffer doFlush(IntBuffer cards, CardMemory cardMemory) {
+        return Play.FLUSH.recognize(cards, cardMemory);
     }
 
-    static IntBuffer doFlush(IntBuffer hand) {
-
-        final IntBuffer[] sbuf = new IntBuffer[SUITS_LEN];
-        for (int i = 0; i < sbuf.length; i++)
-            sbuf[i] = BuffUtil.allocate(FLUSH.minimum);
-
-
-        int suit;
-        IntBuffer res = null;
-        hand.reset();
-        while (hand.hasRemaining()) {
-            int card = hand.get();
-            /*suit*/
-            suit = card & 0x3;
-            sbuf[suit].put(card);
-            if (!sbuf[suit].hasRemaining()) {
-                res = sbuf[suit];
-                break;
-            }
-        }
-
-        if (res == null)
-            for (IntBuffer buffer : sbuf) {
-                if (buffer.position() > 4) {
-                    res = (IntBuffer) buffer.reset();
-                    break;
-                }
-            }
-        return res;
-
-
+    static IntBuffer doStraightFlush(IntBuffer cards, CardMemory cardMemory) {
+        return Play.STRAIGHTFLUSH.recognize(cards, cardMemory);
     }
 
-    static IntBuffer doStrait(IntBuffer cards) {
-        int pFace = DECK_SIZE + 1;
-        final IntBuffer swap = BuffUtil.allocate(5);
-        cards.reset();
-        IntBuffer res = null;
-        while (cards.hasRemaining()) {
-            final int card = cards.get();
-            /*face*/
-            int face = card >>> 16;
-            final int distance = face - pFace;
-
-            if (distance != 0) {
-                pFace = face;
-                if (distance != 1)
-                    swap.reset();
-                swap.put(card);
-                if (!swap.hasRemaining()) {
-                    res = swap;
-                    break;
-                }
-                if (swap.remaining() + cards.position() < 5) break;
-            }
-        }
-        return res;
+    static IntBuffer doRoyalFlush(IntBuffer cards, CardMemory cardMemory) {
+        return Play.ROYALSTRAIGHTFLUSH.recognize(cards, cardMemory);
     }
 
-
-    /**
-     * @param cards
-     * @param cardMemory
-     * @return
-     */
-    @SuppressWarnings({"StatementWithEmptyBody"})
-    static private IntBuffer doStraitFlush(IntBuffer cards, CardMemory cardMemory) {
-        int idx = 0;
-        IntBuffer flush = null;
-        IntBuffer straight;
-        final int clim = cards.limit();
-        do {
-            cards.position(idx).mark();
-            idx++;
-            straight = STRAIGHT.recognize2(cards, cardMemory);
-
-            if (straight != null) {
-                straight.rewind().mark();
-                if (!cardMemory.hasCacheEntry(STRAIGHT))
-                    cardMemory.mpos(STRAIGHT).put(straight);
-
-
-                flush = (IntBuffer) FLUSH.recognize2((IntBuffer) straight.reset(), cardMemory);
-                if (flush != null)
-                    if (!cardMemory.hasCacheEntry(FLUSH))
-                        cardMemory.mpos(FLUSH).put(((IntBuffer) flush.reset()));
-            }
-        } while (5 < clim - idx && (flush == null) != (straight == null)); /*
-            this must avoid the cache due to 6-card and 7-card
-            flushes being higher than the straight */
-        return flush;
+    private static IntBuffer fastMatch(IntBuffer hand, Play play) {
+        CardMemory mem = new CardMemory();
+        return play.recognize(hand, mem);
     }
 
-    static IntBuffer doRoyalStraitFlush(IntBuffer hand, CardMemory memory) {
-
-        if (memory.ace1st) {
-
-            final IntBuffer swap = STRAIGHTFLUSH.recognize(hand, memory);
-
-            if (swap != null && ACE_ORD == ((IntBuffer) swap.reset()).get(0))
-                return swap;
-        }
-        return null;
-    }                              
-
+    public static int compareBoat(IntBuffer boat1, IntBuffer boat2) {
+        // compare three-of-a-kind part
+        int b1t = CardUtil.face(boat1.get(0));
+        int b2t = CardUtil.face(boat2.get(0));
+        if (b1t != b2t) return b1t - b2t;
+        // compare pair part
+        int b1p = CardUtil.face(boat1.get(3));
+        int b2p = CardUtil.face(boat2.get(3));
+        return b1p - b2p;
+    }
 }
