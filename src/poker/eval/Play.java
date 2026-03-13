@@ -98,7 +98,7 @@ public enum Play {
 
     FULLHOUSE(5) {
         public int compareHand(int[] cards, int[] cards1) {
-            return HoldenRules.compareBoat(cards, cards1);
+            return HoldemRules.compareBoat(cards, cards1);
         }
 
         int[] recognize2(int[] hand, CardMemory memory) {
@@ -302,9 +302,21 @@ public enum Play {
                 else if (runLen == 2) pairLen++;
             }
             if (tripLen > 0 && pairLen > 0) {
+                int[] res = new int[5];
+                int tripStart = -1, pairStart = -1;
+                for (int i = 0; i < memory.runsLen; i += 2) {
+                    int runLen = memory.runsBuf[i + 1];
+                    int start = memory.runsBuf[i];
+                    if (runLen == 3 && tripStart < 0) tripStart = start;
+                    else if (runLen == 2 && pairStart < 0) pairStart = start;
+                }
+                if (tripStart >= 0 && pairStart >= 0) {
+                    System.arraycopy(cards, tripStart, res, 0, 3);
+                    System.arraycopy(cards, pairStart, res, 3, 2);
+                }
                 return new Pair<Play, int[]>() {
                     public Play getFirst() { return FULLHOUSE; }
-                    public int[] getSecond() { return doFullHouse(cards, memory); }
+                    public int[] getSecond() { return res; }
                 };
             }
         }
@@ -404,6 +416,7 @@ public enum Play {
         int card = -1;
         int prev = card;
         memory.ace1st = ACE.ordinal() == face(hand[0]);
+        int run = 0;
 
         for (int curs = 0; curs < hlen; curs++, prev = card) {
             card = hand[curs];

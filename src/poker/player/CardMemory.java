@@ -21,7 +21,7 @@ public class CardMemory {
     public int lastCount;
     public int ranks;
     public ArrayList<int[]> runs = new ArrayList<int[]>();
-    public int[][] flush = new int[4][7];
+    public int[][] flush = new int[4][12];
     public int[] flushLen = new int[4];  // Track actual length per suit
     public int flushidx;
     public int[] straight = new int[7];
