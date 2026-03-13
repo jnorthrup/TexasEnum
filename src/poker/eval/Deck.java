@@ -60,20 +60,20 @@ public final class Deck {
 
 
     /**
-     * shuffles cards.
+     * shuffles cards using Fisher-Yates with primitive array.
      */
     public void shuffle() {
 
         if (Seat.test) return;
 
-        List<Integer> b = new ArrayList<Integer>();
-        for (int aInteger : deck)
-            b.add(aInteger);
+        System.arraycopy(deck, 0, cards, 0, DECK_SIZE);
 
-        Collections.shuffle(b);
-
-        for (int i = 0; i < b.size(); i++)
-            cards[i] = b.get(i);
+        for (int i = DECK_SIZE - 1; i > 0; i--) {
+            int j = (int) (Math.random() * (i + 1));
+            int tmp = cards[i];
+            cards[i] = cards[j];
+            cards[j] = tmp;
+        }
 
         if (Seat.test) {
             dump();

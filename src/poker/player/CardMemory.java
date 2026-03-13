@@ -21,20 +21,18 @@ public class CardMemory {
     public int lastCount;
     public int ranks;
     public ArrayList<int[]> runs = new ArrayList<int[]>();
-    public int[][] flush = {
-            new int[7],
-            new int[7],
-            new int[7],
-            new int[7],
-    };
+    public int[][] flush = new int[4][7];
+    public int[] flushLen = new int[4];  // Track actual length per suit
     public int flushidx;
-    public int[] straight = new int[0];
+    public int[] straight = new int[7];
+    public int straightLen = 0;
     public boolean ace1st;
     public int[] straightflush;
+    public int[] runsBuf = new int[21];  // Pre-allocated buffer for runs (max 7 cards * 3 runs)
+    public int runsLen = 0;
 
     public CardMemory() {
         cache = new int[MEM_SIZE];
-        init();
     }
 
     /**
@@ -125,6 +123,15 @@ public class CardMemory {
     }
 
     public void wipe() {
-
+        ranks = 0;
+        flushidx = 0;
+        straightLen = 0;
+        runsLen = 0;
+        ace1st = false;
+        straightflush = null;
+        for (int i = 0; i < 4; i++) {
+            flushLen[i] = 0;
+        }
+        System.arraycopy(CLEAN, 0, cache, 0, MEM_SIZE);
     }
 }

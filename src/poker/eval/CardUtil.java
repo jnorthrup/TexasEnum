@@ -19,6 +19,9 @@ public class CardUtil {
     static public final int[] EMPTYCARDS = new int[0];
     static public final int STRAIT_MATCH_NEEDED = 4;
 
+    private static final Face[] FACE_VALUES = Face.values();
+    private static final Suit[] SUIT_VALUES = Suit.values();
+
     // Card encoding: (face << 2) | suit
     // face: 0-12 (4 bits), suit: 0-3 (2 bits)
     final public static int suit(final int card) {
@@ -152,7 +155,7 @@ public class CardUtil {
      * @deprecated
      */
     static public Suit suit(final Integer card) {
-        return Suit.values()[card & 0x3];
+        return SUIT_VALUES[card & 0x3];
     }
 
     /**
@@ -162,7 +165,7 @@ public class CardUtil {
      */
     static public Face face(final Integer card) {
         final int f = card >>> 2;
-        return Face.values()[f];
+        return FACE_VALUES[f];
     }
 
     public static int[] mergeSortHands(int[]... hands) {

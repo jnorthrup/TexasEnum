@@ -30,39 +30,22 @@ public enum Play {
     },
 
     STRAIGHTFLUSH(5) {
-
-
         int[] recognize2(int[] hand, CardMemory memory) {
-
             if (memory.straightflush != null && memory.straightflush.length > 0) {
-                if (memory.straightflush != null) return memory.straightflush;
-            } else {
-                return null;
+                return memory.straightflush;
             }
             if (memory.ranks < 5) return null;
-            int[] res = null;
             int[] fbuf = memory.flush[memory.flushidx];
-            final int[] sbuf = memory.straight;
-            if (sbuf.length < 5 || fbuf.length < 5) return null;
-
-            {
-                final int card = sbuf[sbuf.length - 1];
-                final int i = face(card);
-                if (memory.ace1st && i == ACE.ordinal()) {
-
-                    int[] t = BuffUtil.allocate(fbuf.length);
-                    final int first = fbuf[0];
-                    System.arraycopy(fbuf, 0, t, 0, fbuf.length);
-                    t[fbuf.length] = first;
-                    fbuf = t;
-                }
-            }
+            int flen = memory.flushLen[memory.flushidx];
+            int[] sbuf = memory.straight;
+            int slen = memory.straightLen;
+            if (slen < 5 || flen < 5) return null;
 
             int fidx = 0;
             int sidx = 0;
             int hit = 0;
 
-            while (fidx < fbuf.length && sidx < sbuf.length) {
+            while (fidx < flen && sidx < slen) {
                 int f = fbuf[fidx++];
                 int s = sbuf[sidx++];
                 final int ff = face(f);
@@ -71,12 +54,14 @@ public enum Play {
                 if (ff == sf) {
                     hit++;
                     if (hit == 5) {
-                        res = Arrays.copyOfRange(fbuf, fidx - 5, fidx);
-                        break;
+                        int[] res = new int[5];
+                        for (int i = 0; i < 5; i++) res[i] = fbuf[fidx - 5 + i];
+                        memory.straightflush = res;
+                        return res;
                     }
                 } else {
                     hit = 0;
-                    if (fbuf.length - fidx < 5 || sbuf.length - sidx < 5)
+                    if (flen - fidx < 5 || slen - sidx < 5)
                         break;
                     if (ff > sf)
                         s = sbuf[sidx++];
@@ -84,28 +69,27 @@ public enum Play {
                         f = fbuf[fidx - 1];
                 }
             }
-            memory.straightflush = res == null ? new int[0] : res;
-            return res;
+            memory.straightflush = EMPTYCARDS;
+            return null;
         }
     },
 
     FOUROFAKIND(4) {
-        public int compareHand
-                (int[]
-                        cards, int[]
-                        cards1) {
+        public int compareHand(int[] cards, int[] cards1) {
             return compareDefault(cards, cards1);
         }
 
-        int[] recognize2
-                (int[]
-                        hand, CardMemory
-                        memory) {
+        int[] recognize2(int[] hand, CardMemory memory) {
             final int len = hand.length;
             int alen = len - 4;
             if (memory.ranks <= 1 + alen) {
-                for (int[] run : memory.runs) {
-                    if (run.length == 4) return run;
+                for (int i = 0; i < memory.runsLen; i += 2) {
+                    if (memory.runsBuf[i + 1] == 4) {
+                        int start = memory.runsBuf[i];
+                        int[] res = new int[4];
+                        System.arraycopy(hand, start, res, 0, 4);
+                        return res;
+                    }
                 }
             }
             return null;
@@ -114,89 +98,87 @@ public enum Play {
 
     FULLHOUSE(5) {
         public int compareHand(int[] cards, int[] cards1) {
-            return HoldemRules.compareBoat(cards, cards1);
+            return HoldenRules.compareBoat(cards, cards1);
         }
 
-        int[] recognize2
-                (int[]
-                        hand, CardMemory
-                        memory) {
-            boolean b2 = false, b3 = false;
-            int[] swap = allocate(minimum);
-            final int len = hand.length;
-            final int alen = len - 5;
-            if (memory.ranks <= alen + 2) {
-                for (int[] run : memory.runs) {
-                    if ((!b3) && run.length == 3) {
-                        System.arraycopy(run, 0, swap, 0, 3);
-                        b3 = true;
-                    } else if ((!b2) && run.length != 4) {
-                        System.arraycopy(run, 0, swap, 3, 2);
-                        b2 = true;
-                    }
-                    if (b2 & b3)
-                        return swap;
+        int[] recognize2(int[] hand, CardMemory memory) {
+            int tripStart = -1, pairStart = -1;
+            for (int i = 0; i < memory.runsLen; i += 2) {
+                int runLen = memory.runsBuf[i + 1];
+                if (runLen == 3 && tripStart < 0) {
+                    tripStart = memory.runsBuf[i];
+                } else if (runLen == 2 && pairStart < 0) {
+                    pairStart = memory.runsBuf[i];
+                }
+                if (tripStart >= 0 && pairStart >= 0) {
+                    int[] res = new int[5];
+                    System.arraycopy(hand, tripStart, res, 0, 3);
+                    System.arraycopy(hand, pairStart, res, 3, 2);
+                    return res;
                 }
             }
             return null;
         }
     },
-    /**
-     * flush parsing returns as many flush cards as have been found in order to facilitiate better straightflush recogniztion from the outcomes of flush
-     */
     FLUSH(5) {
         int[] recognize2(int[] hand, CardMemory memory) {
-            final int[] flush = memory.flush[memory.flushidx];
-            return flush.length > 4 ? flush : null;
+            final int flen = memory.flushLen[memory.flushidx];
+            return flen > 4 ? memory.flush[memory.flushidx] : null;
         }
     },
 
 
     STRAIGHT(5) {
         int[] recognize2(int[] hand, CardMemory memory) {
-            final int[] buffer = memory.straight;
-            final int i = buffer.length;
-            return i > 4 ? buffer : null;
+            return memory.straightLen > 4 ? memory.straight : null;
         }
     },
 
     THREEOFAKIND(3) {
-        int[] recognize2
-                (int[]
-                        hand, CardMemory
-                        memory) {
+        int[] recognize2(int[] hand, CardMemory memory) {
             int alen = hand.length - minimum;
             if (memory.ranks > 1 + alen) return null;
-            for (int[] run : memory.runs)
-                if (run.length == 3) return run;
+            for (int i = 0; i < memory.runsLen; i += 2) {
+                if (memory.runsBuf[i + 1] == 3) {
+                    int start = memory.runsBuf[i];
+                    int[] res = new int[3];
+                    System.arraycopy(hand, start, res, 0, 3);
+                    return res;
+                }
+            }
             return null;
         }
     },
 
     TWOPAIR(4) {
-        int[] recognize2
-                (int[]
-                        hand, CardMemory
-                        memory) {
-            int[] swap = allocate(4);
-
-
-            if (memory.runs.size() > 1) {
-                System.arraycopy(memory.runs.get(0), 0, swap, 0, 2);
-                System.arraycopy(memory.runs.get(1), 0, swap, 2, 2);
+        int[] recognize2(int[] hand, CardMemory memory) {
+            int pairCount = 0;
+            for (int i = 0; i < memory.runsLen; i += 2) {
+                if (memory.runsBuf[i + 1] == 2) pairCount++;
+            }
+            if (pairCount >= 2) {
+                int[] swap = new int[4];
+                int idx = 0;
+                for (int i = 0; i < memory.runsLen && idx < 4; i += 2) {
+                    if (memory.runsBuf[i + 1] == 2) {
+                        int start = memory.runsBuf[i];
+                        swap[idx++] = hand[start];
+                        swap[idx++] = hand[start + 1];
+                    }
+                }
                 return swap;
             }
             return null;
         }
     },
     PAIR(2) {
-        int[] recognize2
-                (int[]
-                        hand, CardMemory
-                        memory) {
-
-            if (memory.runs.isEmpty()) return null;
-            return memory.runs.get(0);
+        int[] recognize2(int[] hand, CardMemory memory) {
+            if (memory.runsLen == 0) return null;
+            int start = memory.runsBuf[0];
+            int[] res = new int[2];
+            res[0] = hand[start];
+            res[1] = hand[start + 1];
+            return res;
         }
     },
     HIGH(1) {
@@ -254,32 +236,150 @@ public enum Play {
 
     public static Pair<Play, int[]> assess(int[] cards, CardMemory memory) {
 
-        Pair<Play, int[]> res = null;
-        final int[] hand = cards.clone();
-
         if (memory.lastCount != cards.length) {
             memory.wipe();
-            handRanks(hand, memory);
+            handRanks(cards, memory);
         }
 
         memory.lastCount = cards.length;
 
-        for (final Play play : Play.values()) {
-            final int[] swap = play.recognize(hand, memory);
-            if (swap != null) {
-                res = new Pair<Play, int[]>() {
-                    public Play getFirst() {
-                        return play;
+        if (memory.ranks >= 5) {
+            int[] straightBuf = memory.straight;
+            int straightLen = memory.straightLen;
+            if (straightLen >= 5) {
+                int[] fbuf = memory.flush[memory.flushidx];
+                int flen = memory.flushLen[memory.flushidx];
+                if (flen >= 5) {
+                    int hit = 0;
+                    int sidx = 0;
+                    for (int f = 0; f < flen && sidx < straightLen; f++) {
+                        if (face(fbuf[f]) == face(straightBuf[sidx])) {
+                            hit++;
+                            sidx++;
+                            if (hit == 5) {
+                                int[] res = new int[5];
+                                for (int i = 0; i < 5; i++) res[i] = fbuf[f - 4 + i];
+                                if (face(res[0]) == ACE.ordinal()) {
+                                    return new Pair<Play, int[]>() {
+                                        public Play getFirst() { return ROYALSTRAIGHTFLUSH; }
+                                        public int[] getSecond() { return res; }
+                                    };
+                                }
+                                return new Pair<Play, int[]>() {
+                                    public Play getFirst() { return STRAIGHTFLUSH; }
+                                    public int[] getSecond() { return res; }
+                                };
+                            }
+                        } else {
+                            hit = 0;
+                            sidx = 0;
+                        }
                     }
-
-                    public int[] getSecond() {
-                        return swap;
-                    }
-                };
-                break;
+                }
             }
         }
-        return res;
+
+        if (memory.ranks <= 2) {
+            for (int i = 0; i < memory.runsLen; i += 2) {
+                int runStart = memory.runsBuf[i];
+                int runLen = memory.runsBuf[i + 1];
+                if (runLen == 4) {
+                    int[] res = new int[4];
+                    System.arraycopy(cards, runStart, res, 0, 4);
+                    return new Pair<Play, int[]>() {
+                        public Play getFirst() { return FOUROFAKIND; }
+                        public int[] getSecond() { return res; }
+                    };
+                }
+            }
+        }
+
+        if (memory.ranks <= 3) {
+            int tripLen = 0, pairLen = 0;
+            for (int i = 0; i < memory.runsLen; i += 2) {
+                int runLen = memory.runsBuf[i + 1];
+                if (runLen == 3) tripLen++;
+                else if (runLen == 2) pairLen++;
+            }
+            if (tripLen > 0 && pairLen > 0) {
+                return new Pair<Play, int[]>() {
+                    public Play getFirst() { return FULLHOUSE; }
+                    public int[] getSecond() { return doFullHouse(cards, memory); }
+                };
+            }
+        }
+
+        int flen = memory.flushLen[memory.flushidx];
+        if (flen >= 5) {
+            int[] res = new int[5];
+            System.arraycopy(memory.flush[memory.flushidx], 0, res, 0, 5);
+            return new Pair<Play, int[]>() {
+                public Play getFirst() { return FLUSH; }
+                public int[] getSecond() { return res; }
+            };
+        }
+
+        if (memory.straightLen >= 5) {
+            int[] res = new int[5];
+            System.arraycopy(memory.straight, 0, res, 0, 5);
+            return new Pair<Play, int[]>() {
+                public Play getFirst() { return STRAIGHT; }
+                public int[] getSecond() { return res; }
+            };
+        }
+
+        if (memory.ranks <= 3) {
+            for (int i = 0; i < memory.runsLen; i += 2) {
+                if (memory.runsBuf[i + 1] == 3) {
+                    int runStart = memory.runsBuf[i];
+                    int[] res = new int[3];
+                    System.arraycopy(cards, runStart, res, 0, 3);
+                    return new Pair<Play, int[]>() {
+                        public Play getFirst() { return THREEOFAKIND; }
+                        public int[] getSecond() { return res; }
+                    };
+                }
+            }
+        }
+
+        if (memory.ranks <= 3) {
+            int pairCount = 0;
+            for (int i = 0; i < memory.runsLen; i += 2) {
+                if (memory.runsBuf[i + 1] == 2) pairCount++;
+            }
+            if (pairCount >= 2) {
+                int[] res = new int[4];
+                for (int i = 0, idx = 0; i < memory.runsLen && idx < 4; i += 2) {
+                    if (memory.runsBuf[i + 1] == 2) {
+                        int runStart = memory.runsBuf[i];
+                        res[idx++] = cards[runStart];
+                        res[idx++] = cards[runStart + 1];
+                    }
+                }
+                return new Pair<Play, int[]>() {
+                    public Play getFirst() { return TWOPAIR; }
+                    public int[] getSecond() { return res; }
+                };
+            }
+        }
+
+        if (memory.runsLen > 0) {
+            int runStart = memory.runsBuf[0];
+            int[] res = new int[2];
+            res[0] = cards[runStart];
+            res[1] = cards[runStart + 1];
+            return new Pair<Play, int[]>() {
+                public Play getFirst() { return PAIR; }
+                public int[] getSecond() { return res; }
+            };
+        }
+
+        int[] res = new int[1];
+        res[0] = cards[0];
+        return new Pair<Play, int[]>() {
+            public Play getFirst() { return HIGH; }
+            public int[] getSecond() { return res; }
+        };
     }
 
     /**
@@ -294,16 +394,12 @@ public enum Play {
         memory.flushidx = 0;
         int hlen = hand.length;
 
-        memory.straight = new int[0];
         memory.straightflush = null;
-
-        int[] straight = allocate(hlen);
-        int straightPos = 0; // tracks current position in straight array
-
-        for (int i = 0; i < memory.flush.length; i++)
-            memory.flush[i] = BuffUtil.allocate(hlen);
-
-        int run = 0; //find pairs, trips, etc.
+        memory.straightLen = 0;
+        
+        for (int i = 0; i < 4; i++) {
+            memory.flushLen[i] = 0;
+        }
 
         int card = -1;
         int prev = card;
@@ -311,70 +407,87 @@ public enum Play {
 
         for (int curs = 0; curs < hlen; curs++, prev = card) {
             card = hand[curs];
-            final int face = face(card);
+            final int f = face(card);
             final int pface = face(prev);
-            final boolean same = face == pface;
+            final boolean same = f == pface;
             final int suit = suit(card);
-            memory.flush[suit][curs] = card;
+            
+            int[] flushBuf = memory.flush[suit];
+            int flushPos = memory.flushLen[suit];
+            flushBuf[flushPos] = card;
+            memory.flushLen[suit] = flushPos + 1;
 
             final boolean ending = (curs == (hlen - 1));
 
             if (same) {
-                run++;
                 if (!ending)
                     continue;
             } else
                 memory.ranks++;
 
             if (!same || ending)
-                if (run != 0) {
-                    int[] runBuf = Arrays.copyOfRange(hand, curs - run, curs + 1);
-                    memory.runs.add(runBuf);
+                if (curs - run >= 0) {
+                    int runStart = curs - run;
+                    int runLen = run + 1;
+                    if (runLen == 3 || runLen == 4) {
+                        int[] runBuf = memory.runsBuf;
+                        int rpos = memory.runsLen;
+                        runBuf[rpos] = runStart;
+                        runBuf[rpos + 1] = runLen;
+                        memory.runsLen += 2;
+                    }
                     run = 0;
                 }
 
 
-            final boolean consecutive = curs == 0 || face - pface == 1;
+            final boolean consecutive = curs == 0 || f - pface == 1;
 
-            boolean wheel = false;
             if (consecutive) {
-                straight[straightPos++] = card;
-                wheel = memory.ace1st &&
-                        face == TWO.ordinal() &&
-                        face(straight[0]) == FIVE.ordinal();
-                if (wheel) {
-                    // For wheel (A-2-3-4-5), we need to prepend the Ace to the straight
-                    // straight currently has 2,3,4,5 (4 cards), straightPos = 4
-                    // We need to create a new array with 5 cards: A,2,3,4,5
-                    int[] tmp = BuffUtil.allocate(straightPos + 1);
-                    tmp[0] = hand[0]; // Ace
-                    System.arraycopy(straight, 0, tmp, 1, straightPos);
-                    straight = tmp;
-                    straightPos++;
+                int[] straightBuf = memory.straight;
+                if (memory.straightLen < 7) {
+                    straightBuf[memory.straightLen] = card;
+                    memory.straightLen++;
                 }
-                if (!ending && !wheel) continue; //wheel ends straights
+                
+                boolean wheel = memory.ace1st &&
+                        f == TWO.ordinal() &&
+                        face(straightBuf[0]) == FIVE.ordinal();
+                
+                if (wheel) {
+                    // Wheel straight: A-2-3-4-5, use position 0 for Ace
+                    // straight currently has 2,3,4,5, we need A at position 0
+                    // Shift and prepend Ace
+                    for (int w = memory.straightLen - 1; w >= 1; w--) {
+                        straightBuf[w + 1] = straightBuf[w];
+                    }
+                    straightBuf[0] = hand[0];
+                    memory.straightLen++;
+                }
+                
+                if (!ending && !wheel) continue;
             }
 
 
-            if (ending || wheel || straightPos >= memory.straight.length)  //guarantee that equal length straights favor the first
+            if (ending || memory.straightLen >= 5)  
             {
-                memory.straight = Arrays.copyOfRange(straight, 0, straightPos);
+                if (memory.straightLen >= 5) {
+                    memory.straightLen = 5;
+                }
                 if (ending)
                     break;
-                // Reset for next straight tracking
-                straightPos = 0;
-                straight[straightPos++] = card;
-            } else {
-                // Continue tracking the same straight
-                // Replace the last card with current card
-                straight[straightPos - 1] = card;
+                memory.straightLen = 0;
+                if (curs + 1 < hlen) {
+                    memory.straight[0] = hand[curs + 1];
+                    memory.straightLen = 1;
+                }
+            } else if (memory.straightLen > 0) {
+                memory.straight[memory.straightLen - 1] = card;
             }
         }
 
         int max = 0;
         for (int i = 0; i < 4; i++) {
-            final int[] flush = memory.flush[i];
-            final int slen = flush.length;
+            final int slen = memory.flushLen[i];
             if (slen > max) {
                 memory.flushidx = i;
                 max = slen;
