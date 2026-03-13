@@ -46,10 +46,10 @@ public class PocketRankStrategy implements Strategy {
 
     @Override
     public TurnAct advise(Dealer dealer, Player player) {
-        if (player.pocket.limit() < 2) return TurnAct.check;
+        if (player.pocket.length < 2) return TurnAct.check;
 
-        final int c1 = player.pocket.get(0);
-        final int c2 = player.pocket.get(1);
+        final int c1 = player.pocket[0];
+        final int c2 = player.pocket[1];
         final int rank = c1 > c2 ? pocketRank(c1, c2) : pocketRank(c2, c1);
 
         if (rank <= raiseThreshold) return TurnAct.raise;
@@ -59,8 +59,8 @@ public class PocketRankStrategy implements Strategy {
 
     @Override
     public double getRaiseAmount(Dealer dealer, Player player) {
-        final int c1 = player.pocket.get(0);
-        final int c2 = player.pocket.get(1);
+        final int c1 = player.pocket[0];
+        final int c2 = player.pocket[1];
         final double rate = ((c1 > c2 ? pocketRank(c1, c2) : pocketRank(c2, c1))) / 8.0;
         final double v = fuse(player, handspan(dealer));
         final int s = dealer.players.size();

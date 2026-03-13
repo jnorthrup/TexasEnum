@@ -51,7 +51,7 @@ public class GameStateBenchmark {
                 .warmupTime(TimeValue.seconds(1))
                 .measurementIterations(10)
                 .measurementTime(TimeValue.seconds(1))
-                .forks(1)
+                .forks(0)
                 .threads(1)
                 .build();
 

@@ -38,9 +38,21 @@ public class CardUtil {
     public static int[] addSorted(int card, int[] focus) {
 
         // ensure focus has room to grow
-        if (focus.length <= focus.length) {
-            final int ilim = focus.length;
-            final int[] grown = BuffUtil.allocate(7);
+        // Focus is full if it's non-empty and has no -1 markers (card values are 0-51)
+        final int ilim = focus.length;
+        boolean needsGrow = false;
+        if (ilim > 0) {
+            // Check if array is full (no -1 markers)
+            int count = 0;
+            for (int i = 0; i < ilim; i++) {
+                if (focus[i] != -1) count++;
+            }
+            needsGrow = (count == ilim);
+        }
+        
+        if (needsGrow || ilim == 0) {
+            final int newSize = Math.max(7, ilim + 1);
+            final int[] grown = BuffUtil.allocate(newSize);
             if (ilim > 0) {
                 System.arraycopy(focus, 0, grown, 0, ilim);
             }
@@ -48,7 +60,6 @@ public class CardUtil {
         }
 
         final int icap = focus.length;
-        final int ilim = focus.length;
 
         int hwater = Deck.DECK_SIZE;
         int idx = 0;

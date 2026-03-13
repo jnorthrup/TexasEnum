@@ -298,6 +298,7 @@ public enum Play {
         memory.straightflush = null;
 
         int[] straight = allocate(hlen);
+        int straightPos = 0; // tracks current position in straight array
 
         for (int i = 0; i < memory.flush.length; i++)
             memory.flush[i] = BuffUtil.allocate(hlen);
@@ -337,29 +338,37 @@ public enum Play {
 
             boolean wheel = false;
             if (consecutive) {
-                straight[curs] = card;
+                straight[straightPos++] = card;
                 wheel = memory.ace1st &&
                         face == TWO.ordinal() &&
                         face(straight[0]) == FIVE.ordinal();
                 if (wheel) {
-                    int[] tmp = BuffUtil.allocate(hlen);
-                    System.arraycopy(straight, 0, tmp, 0, hlen);
-                    tmp[hlen] = hand[0];
+                    // For wheel (A-2-3-4-5), we need to prepend the Ace to the straight
+                    // straight currently has 2,3,4,5 (4 cards), straightPos = 4
+                    // We need to create a new array with 5 cards: A,2,3,4,5
+                    int[] tmp = BuffUtil.allocate(straightPos + 1);
+                    tmp[0] = hand[0]; // Ace
+                    System.arraycopy(straight, 0, tmp, 1, straightPos);
                     straight = tmp;
+                    straightPos++;
                 }
                 if (!ending && !wheel) continue; //wheel ends straights
             }
 
 
-            if (ending || wheel || curs >= memory.straight.length)  //guarantee that equal length straights favor the first
+            if (ending || wheel || straightPos >= memory.straight.length)  //guarantee that equal length straights favor the first
             {
-                memory.straight = Arrays.copyOfRange(straight, 0, curs + 1);
+                memory.straight = Arrays.copyOfRange(straight, 0, straightPos);
                 if (ending)
                     break;
-                straight = allocate(hlen - curs);
-            } else
-                straight = Arrays.copyOfRange(straight, 0, curs);
-            straight[curs] = card;
+                // Reset for next straight tracking
+                straightPos = 0;
+                straight[straightPos++] = card;
+            } else {
+                // Continue tracking the same straight
+                // Replace the last card with current card
+                straight[straightPos - 1] = card;
+            }
         }
 
         int max = 0;
