@@ -37,7 +37,7 @@ public class Player extends Seat implements Comparable<Player> {
 
     protected void init() {
         stack = 500;
-        strategy = new Strategy();
+        strategy = new DefaultStrategy();
         cards = EMPTYCARDS;
         pocket = EMPTYCARDS;
         this.shot = EMPTYCARDS;

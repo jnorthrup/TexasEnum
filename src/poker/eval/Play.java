@@ -21,7 +21,7 @@ public enum Play {
         IntBuffer recognize2(IntBuffer hand, CardMemory memory) {
             if (memory.ranks < 5 && !memory.ace1st) return null;
             final IntBuffer res = STRAIGHTFLUSH.recognize2(hand, memory);
-            if (res != null && suit(res.get(0)) == ACE.ordinal())
+            if (res != null && face(res.get(0)) == ACE.ordinal())
                 return res;
             return null;
         }

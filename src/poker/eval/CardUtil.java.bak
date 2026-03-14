@@ -2,7 +2,7 @@ package poker.eval;
 
 import static poker.eval.Deck.*;
 
-import java.nio.*;
+import poker.eval.BuffUtil.IntProxy;
 import java.util.*;
 
 /**
